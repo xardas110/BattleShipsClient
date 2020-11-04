@@ -26,6 +26,7 @@ class PlayerClient
 	void GameBegin(const Json& data);
 	void GameUpdate(const Json& data);
 	void GameFinished(const Json& data);
+	void GamePlayerShipHit(const Json& data);
 
 	int Convert2Dto1D(const iVec2D pos);
 	iVec2D Convert1Dto2D(const int pos);

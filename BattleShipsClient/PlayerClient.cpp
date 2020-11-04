@@ -152,6 +152,13 @@ void PlayerClient::GameFinished(const Json& data)
 
 }
 
+void PlayerClient::GamePlayerShipHit(const Json& data)
+{
+    iVec2D pos = Convert1Dto2D((int)data["Pos"]);
+    const char ch = (int)data["Ch"];
+    boardReplicate[pos.y][pos.x] = ch;
+}
+
 int PlayerClient::Convert2Dto1D(const iVec2D pos)
 {
     return (pos.y * numCol) + pos.x;
@@ -241,9 +248,9 @@ void PlayerClient::Run()
     WaitForSingleObject(hWaitBegin, INFINITE);
     while (GetNumShots() > 0)
     {   
-        Sleep(10);//trying 100 ticks
-        RequestShoot();     
-        WaitForSingleObject(hWaitUpdate, INFINITE);
+        RequestShoot();
+        RequestGameUpdate();
+        WaitForSingleObject(hWaitUpdate, INFINITE);           
     }
     client.ShutDown();
     listenTH.join();
@@ -357,8 +364,12 @@ void PlayerClient::OnListen()
                         PrintBoard();
                         break;
                     case EVENT_FINISHED:
-                        GameFinished(request["Event_Finished"]);
+                        GameFinished(request["Event_Finished"]);                        
                         bGame = false;
+                        break;
+                    case EVENT_PLAYER_SHIP_HIT:
+                        GamePlayerShipHit(request["Event_Player_Ship_Hit"]);
+                        PrintBoard();
                         break;
                     default:
                         break;
@@ -369,8 +380,8 @@ void PlayerClient::OnListen()
         }
         if (iResult < 0)
             return;
-        Sleep(10);//trying 100 ticks
     } while (bGame);
+    SetEvent(hWaitUpdate); //For best practise to avoid infinite loop in other thread.
 }
 
 const size_t PlayerClient::GetNumShots() const
