@@ -8,7 +8,7 @@
 class PlayerClient
 {
 	std::thread listenTH;
-	HANDLE hWaitUpdate;
+	HANDLE hWaitUpdate, hWaitBegin;
 	char** boardReplicate{ nullptr };
 	char** enemyboardReplicate{ nullptr };
 	Client client;

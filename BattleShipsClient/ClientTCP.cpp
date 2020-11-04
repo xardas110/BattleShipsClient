@@ -75,16 +75,13 @@ int Client::Init(const std::string IP)
 
 int Client::Send(const char* data)
 {
-    sendMTX.lock();
     int iResult = send(ConnectSocket, data, strlen(data), 0);
     if (iResult == SOCKET_ERROR) {
         printf("send failed with error: %d\n", WSAGetLastError());
         closesocket(ConnectSocket);
         WSACleanup();
-        sendMTX.unlock();
         return 0;
     }
-    sendMTX.unlock();
     return 1;
 }
 
@@ -119,43 +116,6 @@ Client* Client::Get()
     return gs_app;
 }
 
-void Client::OnListen()
-{
-    Client::Get()->Listen();
-}
-
-void Client::Listen()
-{
-    int iResult{ 0 };
-    char buff[DEFAULT_BUFLEN]{};
-    do {
-        int iResult = recv(ConnectSocket, buff, DEFAULT_BUFLEN, 0);
-        if (iResult > 0)
-        {
-            std::cout << buff << std::endl;
-        }
-        else if (iResult == 0)
-            printf("Connection closed\n");
-        else
-            printf("recv failed with error: %d\n", WSAGetLastError());
-        ZeroMemory(buff, DEFAULT_BUFLEN);
-    } while (true);
-}
-
-void Client::Run()
-{
-    listenTh = new std::thread(Client::OnListen);
-}
-
-void Client::IncomingData(char* data)
-{
-    for (size_t i = 0; i < strlen(data); i++)
-    {
-        std::cout << data[i];
-    }
-    std::cout << std::endl;
-}
-
 int Client::ShutDown()
 {
     // shutdown the connection since no more data will be sent
@@ -165,16 +125,12 @@ int Client::ShutDown()
         closesocket(ConnectSocket);
         WSACleanup();
         return 1;
-    }
-}
-
-void Client::Clean()
-{
-    closesocket(ConnectSocket);
-    WSACleanup();
+    }   
 }
 
 Client::~Client()
 {
+    closesocket(ConnectSocket);
+    WSACleanup();
     delete listenTh;
 }

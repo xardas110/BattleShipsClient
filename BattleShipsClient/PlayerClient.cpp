@@ -72,6 +72,11 @@ PlayerClient::PlayerClient()
         FALSE,
         FALSE,
         NULL);
+    hWaitBegin = CreateEvent(
+        NULL,
+        FALSE,
+        FALSE,
+        NULL);
 }
 
 PlayerClient* PlayerClient::Get()
@@ -201,16 +206,18 @@ PlayerClient::ShootStatus PlayerClient::Shoot(iVec2D& pos)
 
 void PlayerClient::RequestShoot()
 {
-    iVec2D pos;
-    if (Shoot(pos) != ShootStatus::OK)
-        return;
-    Json response(Json::Object);
-    response.Set("Events", Json::Array);
-    response.Set("Status", S_OK);
-    response["Events"].Add(EVENT_SHOOT);
-    response.Set("Event_Shoot", Json::Object);
-    response["Event_Shoot"].Set("Pos", Convert2Dto1D(pos));
-    client.Send(response.Stringify().c_str());
+    if (GetNumShots() > 0)
+    {
+        iVec2D pos;
+        while (Shoot(pos) != ShootStatus::OK);
+        Json response(Json::Object);
+        response.Set("Events", Json::Array);
+        response.Set("Status", S_OK);
+        response["Events"].Add(EVENT_SHOOT);
+        response.Set("Event_Shoot", Json::Object);
+        response["Event_Shoot"].Set("Pos", Convert2Dto1D(pos));
+        client.Send(response.Stringify().c_str());
+    }
 }
 
 void PlayerClient::RequestGameUpdate()
@@ -231,11 +238,12 @@ void PlayerClient::Run()
 {
     listenTH = std::thread(PlayerClient::ThreadWrapper);
     RequestGameBegin();
-    WaitForSingleObject(hWaitUpdate, INFINITE);
-    while (numShots > 0)
-    {
+    WaitForSingleObject(hWaitBegin, INFINITE);
+    while (GetNumShots() > 0)
+    {   
+        Sleep(10);//trying 100 ticks
+        RequestShoot();     
         WaitForSingleObject(hWaitUpdate, INFINITE);
-        RequestShoot();
     }
     client.ShutDown();
     listenTH.join();
@@ -337,10 +345,12 @@ void PlayerClient::OnListen()
                     case EVENT_BEGIN:
                         GameBegin(request["Event_Begin"]);
                         PrintBoard();
+                        SetEvent(hWaitBegin);
                         break;
                     case EVENT_UPDATE:
                         GameUpdate(request["Event_Update"]);
                         PrintBoard();
+                        SetEvent(hWaitUpdate);
                         break;
                     case EVENT_TURN_ACCEPTED:
                         SetMove(request["Event_Turn_Accepted"]["Pos"], (int)request["Event_Turn_Accepted"]["Ch"]);
@@ -355,10 +365,11 @@ void PlayerClient::OnListen()
                     }
                 }
             }
-            SetEvent(hWaitUpdate);
+            
         }
         if (iResult < 0)
             return;
+        Sleep(10);//trying 100 ticks
     } while (bGame);
 }
 

@@ -16,27 +16,20 @@
 #pragma comment (lib, "Mswsock.lib")
 #pragma comment (lib, "AdvApi32.lib")
 
-
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT "27015"
+
 class Client
 {
 private:
 	SOCKET ConnectSocket = INVALID_SOCKET;
-	std::mutex sendMTX;
 	std::thread* listenTh = nullptr;
-	void Listen();
-	void Clean();
 public:
 	const SOCKET& GetSocket() const;
 	int Init(const std::string IP);
 	int Send(const char* data);
 	int WaitEvent(int event, const size_t waitMS, Json& eventData);
 	static Client* Get();
-	static void OnListen();
-	void Run();
-	void IncomingData(char* data);
 	int ShutDown();
-
 	~Client();
 };
