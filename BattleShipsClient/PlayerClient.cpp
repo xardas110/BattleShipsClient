@@ -1,6 +1,6 @@
+#include "precompiled.h"
 #include "PlayerClient.h"
-#include "NetworkEvents.h"
-#include <mutex>
+
 PlayerClient* gs_pc = nullptr;
 
 

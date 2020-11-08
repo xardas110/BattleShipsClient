@@ -1,6 +1,6 @@
+#include "precompiled.h"
 #include "ClientTCP.h"
-#include "Json.h"
-#include <chrono>
+
 Client* gs_app = nullptr;
 
 const SOCKET& Client::GetSocket() const
@@ -28,10 +28,9 @@ int Client::Init(const std::string IP)
     }
 
     ZeroMemory(&hints, sizeof(hints));
-    hints.ai_family = AF_UNSPEC;
+    hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_protocol = IPPROTO_TCP;
-
     // Resolve the server address and port
     iResult = getaddrinfo(IP.c_str(), DEFAULT_PORT, &hints, &result);
     if (iResult != 0) {
@@ -39,6 +38,7 @@ int Client::Init(const std::string IP)
         WSACleanup();
         return 1;
     }
+
 
     // Attempt to connect to an address until one succeeds
     for (ptr = result; ptr != NULL; ptr = ptr->ai_next) {

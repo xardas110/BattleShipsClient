@@ -1,10 +1,11 @@
 #pragma once
+
+#include "Vec.h"
+#include <Windows.h>
 #include <iostream>
 #include <string>
-#include <Windows.h>
 #include <thread>
 #include <chrono>
-#include "Vec.h"
 
 namespace thelp
 { 
