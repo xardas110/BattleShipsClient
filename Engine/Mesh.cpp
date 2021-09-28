@@ -42,12 +42,52 @@ void Mesh::Draw(unsigned int textureID, unsigned int textureSlot, unsigned int t
     glBindVertexArray(0);
 }
 
+std::unique_ptr<Mesh> Mesh::CreateQuadLines(const unsigned size)
+{
+    unsigned int VAO, VBO, EBO;
+    std::vector<Vertex> quadVert;
+
+    const auto s = size * 1.f;
+    quadVert.push_back(Vertex({ s, s, 0.f }, { 0.f, 0.f, 1.f }, { 1.f, 1.f }));
+    quadVert.push_back(Vertex({ s, -s, 0.f }, { 0.f, 0.f, 1.f }, { 1.f, 0.f }));
+    quadVert.push_back(Vertex({ -s, -s, 0.f }, { 0.f, 0.f, 1.f }, { 0.f, 0.f }));
+    quadVert.push_back(Vertex({ -s, s, 0.f }, { 0.f, 0.f, 1.f }, { 0.f, 1.f }));
+
+    unsigned int indices[] =
+    {
+        0U, 1U, 2U, 3U
+    };
+
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
+
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+    glBufferData(GL_ARRAY_BUFFER, quadVert.size() * sizeof(Vertex), quadVert.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_READ);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)NULL);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, n));
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tc));
+    glBindVertexArray(0);
+
+    std::unique_ptr<Mesh> mesh(new Mesh(VAO, _countof(indices)));
+    return mesh;
+}
+
 std::unique_ptr<Mesh> Mesh::CreateQuad(const unsigned int size)
 { 
     unsigned int VAO, VBO, EBO;
     std::vector<Vertex> quadVert;
 
-    const auto s = size * 0.5f;
+    const auto s = size * 1.f;
     quadVert.push_back(Vertex({ s, s, 0.f }, { 0.f, 0.f, 1.f }, { 1.f, 1.f }));
     quadVert.push_back(Vertex({ s, -s, 0.f }, { 0.f, 0.f, 1.f }, { 1.f, 0.f }));
     quadVert.push_back(Vertex({ -s, -s, 0.f }, { 0.f, 0.f, 1.f }, { 0.f, 0.f }));

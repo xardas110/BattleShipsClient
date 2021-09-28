@@ -51,6 +51,7 @@ void Camera::UpdatePosition(const double& deltaTime)
 	SetTranslate(velocity * (float)deltaTime);
 }
 
+
 const glm::mat4 Camera::GetViewMatrix() const
 {
 	return view;

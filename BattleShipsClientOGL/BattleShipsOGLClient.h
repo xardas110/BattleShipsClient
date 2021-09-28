@@ -12,6 +12,7 @@
 #include "PlayerClient.h"
 #include <memory>
 #include <string>
+
 class BattleShips : public Game
 {
 public:
