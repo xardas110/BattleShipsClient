@@ -36,11 +36,13 @@ private:
 	std::shared_ptr<Texture>testTex;
 	
 	std::unique_ptr<Mesh> RectangleMesh;
+	std::unique_ptr<Mesh> PointMesh;
 	
 	Skybox skybox;
 	Camera camera;
 	float mX, mY;
 
 	std::unique_ptr<QuadTree> quadTree{nullptr};
+	
 };
 

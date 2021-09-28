@@ -1,4 +1,17 @@
 #include "QuadTree.h"
+#include "Macros.h"
+
+QuadTree::QuadTree(const Rect& rect)
+	: bounds(rect)
+{
+	Nodes = new QuadTree * [Size];
+
+	for (auto i = 0; i < Size; i++)
+	{
+		Nodes[i] = nullptr;
+	}
+};
+
 
 bool QuadTree::IsSubDivided() const
 {
@@ -59,16 +72,56 @@ void QuadTree::SubDivide(const int n)
 	}
 }
 
-void QuadTree::GetAllNodes(std::vector<Rect>& container) const
+void QuadTree::Insert(const Point& point)
+{
+	if (!this->bounds.Intersect(point))
+		return;
+
+	auto loopInsert = [&point, this]()
+	{
+		for (auto i = 0; i < Size; i++)
+			Nodes[i]->Insert(point);
+	};
+	
+	if (points.size() < MAX_POINTS_PR_QUAD)
+	{	
+		points.push_back(point);
+	}
+	else
+	{
+		
+		if (IsSubDivided())
+		{
+			loopInsert();
+		}
+		else
+		{
+			SubDivide();
+			loopInsert();
+		}
+	}
+}
+
+void QuadTree::GetAllQuads(std::vector<Rect>& container) const
 {
 	container.push_back(bounds);
 
 	if (IsSubDivided())
 		for (auto i = 0; i < Size; i++)	
-				Nodes[i]->GetAllNodes(container);
+				Nodes[i]->GetAllQuads(container);
 }
 
-void QuadTree::PrintAllNodes() const
+void QuadTree::GetAllPoints(std::vector<Point>& container) const
+{
+	for (const auto &point : points)
+		container.push_back(point);
+
+	if (IsSubDivided())
+		for (auto i = 0; i < Size; i++)
+			Nodes[i]->GetAllPoints(container);
+}
+
+void QuadTree::PrintAllQuads() const
 {
 
 	bounds.Print();
@@ -76,6 +129,11 @@ void QuadTree::PrintAllNodes() const
 	if (IsSubDivided())
 		for (auto i = 0; i < Size; i++)
 		{
-			Nodes[i]->PrintAllNodes();
+			Nodes[i]->PrintAllQuads();
 		}
+}
+
+const Rect& QuadTree::GetBounds() const
+{
+	return bounds;
 }

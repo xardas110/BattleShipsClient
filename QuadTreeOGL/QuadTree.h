@@ -1,47 +1,13 @@
 #pragma once
 #include <iostream>
-
 #include "../include/glm/glm.hpp"
 #include "../include/glm/gtx/transform.hpp"
 #include <vector>
+#include "BoundingShapes.h"
 
 #define MAX_POINTS_PR_QUAD 4
 
-struct Rect
-{
-	Rect(glm::vec3 c, glm::vec3 e)
-		: C(c), E(e){}
-	
-	glm::vec3 C, E;
 
-	const glm::vec3 &GetPosition() const
-	{
-		return C;
-	};
-
-	const glm::vec3& GetScale() const
-	{
-		return E;
-	};
-
-	glm::mat4 GetTranslation() const
-	{
-		glm::mat4 model(1.f);
-
-		model[0][0] = E.x;
-		model[1][1] = E.y;
-
-		model[3][0] = C.x;
-		model[3][1] = C.y;
-		
-		return model;
-	}
-	void Print() const
-	{
-		std::cout << "Centre: " << C.x << " " << C.y << " Extents: " << E.x << " " << E.y << std::endl;
-	}
-	
-};
 
 class QuadTree
 {
@@ -51,26 +17,24 @@ class QuadTree
 	};
 
 public:
-	QuadTree(const Rect& rect)
-		: bounds(rect)
-	{
-		Nodes = new QuadTree *[Size];
-		
-		for (auto i = 0; i< Size; i++)
-		{
-			Nodes[i] = nullptr;
-		}
-	};
-
-	bool IsSubDivided() const;
+	QuadTree(const Rect& rect);
 	
-	Rect bounds;
-	QuadTree** Nodes;
+	bool IsSubDivided() const;
 
 	void SubDivide();
 	void SubDivide(const int n);
+
+	void Insert(const Point &point);
 	
-	void GetAllNodes(std::vector<Rect>& container) const;
-	void PrintAllNodes() const;
+	void GetAllQuads(std::vector<Rect>& container) const;
+	void GetAllPoints(std::vector<Point>& container) const;
+	
+	void PrintAllQuads() const;
+	
+	const Rect& GetBounds() const;
+private:
+	Rect bounds;
+	std::vector<Point> points;
+	QuadTree** Nodes;
 };
 

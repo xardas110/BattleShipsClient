@@ -15,7 +15,7 @@ namespace Bounding
 			UpdateBounds();
 		}
 		Box(glm::vec3 center, glm::vec3 extents)
-			:Center({ center.x, center.y, center.z, 0.f }), Extents({extents.x, extents.y, extents.z, 0.f})
+			:Center{ center.x, center.y, center.z, 0.f }, Extents{ extents.x, extents.y, extents.z, 0.f }
 		{
 			UpdateBounds();
 		}

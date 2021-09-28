@@ -141,17 +141,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BoundingShapes.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="OctreeOGL.cpp" />
     <ClCompile Include="QuadTree.cpp" />
+    <ClCompile Include="RayCast.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BoundingShapes.h" />
+    <ClInclude Include="Macros.h" />
     <ClInclude Include="QuadTree.h" />
     <ClInclude Include="QuadTreeOgl.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Shaders\PrimitivesMaterial.fs" />
-    <None Include="Shaders\PrimitivesMaterial.vs" />
+    <ClInclude Include="RayCast.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
