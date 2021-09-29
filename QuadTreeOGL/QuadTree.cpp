@@ -24,8 +24,8 @@ void QuadTree::SubDivide()
 		return;
 
 	const auto HalfExtent = bounds.E * 0.5f;
-	const auto HalfExtentX = HalfExtent.x;
-	const auto HalfExtentY = HalfExtent.y;
+	const auto &HalfExtentX = HalfExtent.x;
+	const auto &HalfExtentY = HalfExtent.y;
 
 	Nodes[NW] = new QuadTree
 	({
@@ -77,28 +77,17 @@ void QuadTree::Insert(const Point& point)
 	if (!this->bounds.Intersect(point))
 		return;
 
-	auto loopInsert = [&point, this]()
-	{
-		for (auto i = 0; i < Size; i++)
-			Nodes[i]->Insert(point);
-	};
-	
 	if (points.size() < MAX_POINTS_PR_QUAD)
 	{	
 		points.push_back(point);
 	}
 	else
-	{
+	{	
+		if (!IsSubDivided())
+			SubDivide();			
 		
-		if (IsSubDivided())
-		{
-			loopInsert();
-		}
-		else
-		{
-			SubDivide();
-			loopInsert();
-		}
+		for (auto i = 0; i < Size; i++)
+			Nodes[i]->Insert(point);
 	}
 }
 
@@ -123,14 +112,11 @@ void QuadTree::GetAllPoints(std::vector<Point>& container) const
 
 void QuadTree::PrintAllQuads() const
 {
-
 	bounds.Print();
 
 	if (IsSubDivided())
 		for (auto i = 0; i < Size; i++)
-		{
-			Nodes[i]->PrintAllQuads();
-		}
+			Nodes[i]->PrintAllQuads();		
 }
 
 const Rect& QuadTree::GetBounds() const
