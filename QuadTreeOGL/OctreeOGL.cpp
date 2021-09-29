@@ -30,6 +30,7 @@ int QuadTreeOGL::OnLoad()
 	RectangleMesh = Mesh::CreateQuadLines();
 	PointMesh = Mesh::CreatePoint();
 	FilledQuad = Mesh::CreateQuad();
+	CircleMesh = Mesh::CreateCircle(16, 1.f);
 	
 	quadTree = std::make_unique<QuadTree>(QuadTree({ { 0.f, 0.f, 0.f, }, { 4.f, 4.f, 0.f } }));
 
@@ -78,10 +79,12 @@ void QuadTreeOGL::DrawQuadTree(std::shared_ptr<Shader> primitiveMaterialShader, 
 	std::vector<Rect> drawContainerQuads;
 	std::vector<Point*> drawContainerPoints;
 	std::vector<Rect*> drawContainerRectangles;
+	std::vector<Circle*> drawContainerCircles;
 
 	quadTree->GetAllQuads(drawContainerQuads);
 	quadTree->GetAllPoints(drawContainerPoints);
 	quadTree->GetAllAABB(drawContainerRectangles);
+	quadTree->GetAllCircles(drawContainerCircles);
 
 	primitiveMaterialShader->BindMat4("worldspace", model);
 	primitiveMaterialShader->BindMat4("MVP", projectView * model);
@@ -93,7 +96,7 @@ void QuadTreeOGL::DrawQuadTree(std::shared_ptr<Shader> primitiveMaterialShader, 
 		RectangleMesh->Draw(GL_LINE_LOOP);
 	}
 
-	for (auto point : drawContainerPoints)
+	for (auto *point : drawContainerPoints)
 	{
 		model = point->GetTranslation();
 		primitiveMaterialShader->BindMat4("MVP", projectView * model);
@@ -103,14 +106,24 @@ void QuadTreeOGL::DrawQuadTree(std::shared_ptr<Shader> primitiveMaterialShader, 
 		PointMesh->Draw(GL_POINTS);
 	}
 
-	for (auto rectangle : drawContainerRectangles)
+	for (auto *rectangle : drawContainerRectangles)
 	{
 		model = rectangle->GetTranslation();
 		primitiveMaterialShader->BindMat4("MVP", projectView * model);
-		primitiveMaterialShader->BindVec3("ambient", glm::vec3(1.0, 0.0f, 0.0f));
-		primitiveMaterialShader->BindVec3("diffuse", glm::vec3(1.0f, 0.0f, 0.0f));
-		primitiveMaterialShader->BindVec3("specular", glm::vec3(1.f, 0.f, 0.f));
+		primitiveMaterialShader->BindVec3("ambient", glm::vec3(0.0, 1.0f, 0.0f));
+		primitiveMaterialShader->BindVec3("diffuse", glm::vec3(0.0f, 1.0f, 0.0f));
+		primitiveMaterialShader->BindVec3("specular", glm::vec3(0.f, 1.f, 0.f));
 		FilledQuad->Draw(GL_TRIANGLES);
+	}
+
+	for (auto* circle : drawContainerCircles)
+	{
+		model = circle->GetTranslation();
+		primitiveMaterialShader->BindMat4("MVP", projectView * model);
+		primitiveMaterialShader->BindVec3("ambient", glm::vec3(0.0, 0.0f, 1.0f));
+		primitiveMaterialShader->BindVec3("diffuse", glm::vec3(0.0f, 0.0f, 1.0f));
+		primitiveMaterialShader->BindVec3("specular", glm::vec3(0.f, 0.f, 1.f));
+		CircleMesh->Draw(GL_TRIANGLES);
 	}
 }
 
@@ -156,9 +169,24 @@ void QuadTreeOGL::OnMouseClick(MouseClickEvent& e)
 		if (ray.Intersect(box, tMin))
 		{		
 			glm::vec3 intersectPoint = camera.GetPosition() + (radyDir3 * tMin);
+			
 			//Sometimes this z value ends up as a weird number, investigate.
 			intersectPoint.z = 0.f;
-			quadTree->Insert(new Rect(intersectPoint, {0.2f, 0.2f, 0.f}));
+
+			switch (currentSelected)
+			{
+				case Poly::Types::Rectangle:
+					quadTree->InsertIfSpace(new Rect(intersectPoint, {0.2f, 0.2f, 0.f}));
+					break;
+				case Poly::Types::Point:
+					quadTree->InsertIfSpace(new Point(intersectPoint));
+					break;
+				case Poly::Types::Circle:
+					quadTree->InsertIfSpace(new ::Circle(intersectPoint, 0.2f));
+					break;
+				default:
+					break;
+			}
 
 			std::cout << "intersecting" << std::endl;
 			std::cout << intersectPoint.x << " " << intersectPoint.y << " " << intersectPoint.z << std::endl;
@@ -184,8 +212,32 @@ void QuadTreeOGL::OnKeyPressed(KeyEvent& e)
 	case GLFW_KEY_A:
 		camera.AddVelocityX(-1.f);
 		break;
+	case GLFW_KEY_KP_ADD:
+		camera.AddVelocityZ(-1.f);
+		break;
+	case GLFW_KEY_KP_SUBTRACT:
+		camera.AddVelocityZ(1.f);
+		break;
+	case GLFW_KEY_R:
+		for (auto i = 0; i< 2000; i++)
+		{
+			const auto floatscale = 0.001f;
+			const auto scale = 1000.f;
+			const auto randVal = 8.f * scale;
+			float x = (rand() % (int)randVal);
+			float y = (rand() % (int)randVal);
+			x -= randVal * 0.5f;
+			y -= randVal * 0.5f;
+			quadTree->Insert(new Point({ x * floatscale, y* floatscale, 0.f }));
+		}
+		break;
 	default:
 		break;
+	}
+
+	if (e.key > 48 && e.key < 58)
+	{
+		currentSelected = (Poly::Types)(e.key - 48);
 	}
 }
 
@@ -204,6 +256,12 @@ void QuadTreeOGL::OnKeyReleased(KeyEvent& e)
 		break;
 	case GLFW_KEY_A:
 		camera.AddVelocityX(0.f);
+		break;
+	case GLFW_KEY_KP_ADD:
+		camera.AddVelocityZ(0.f);
+		break;
+	case GLFW_KEY_KP_SUBTRACT:
+		camera.AddVelocityZ(0.f);
 		break;
 	default:
 		break;

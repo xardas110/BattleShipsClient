@@ -41,12 +41,15 @@ private:
 	std::unique_ptr<Mesh> RectangleMesh;
 	std::unique_ptr<Mesh> PointMesh;
 	std::unique_ptr<Mesh> FilledQuad;
+	std::unique_ptr<Mesh> CircleMesh;
+	
+	std::unique_ptr<QuadTree> quadTree{nullptr};
+
+	Poly::Types currentSelected = Poly::Rectangle;
 	
 	Skybox skybox;
 	Camera camera;
 	float mX, mY;
 
-	std::unique_ptr<QuadTree> quadTree{nullptr};
-	
 };
 

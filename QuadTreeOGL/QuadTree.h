@@ -5,7 +5,7 @@
 #include <vector>
 #include "BoundingShapes.h"
 
-#define MAX_POINTS_PR_QUAD 4
+#define MAX_POINTS_PR_QUAD 1
 
 class QuadTree
 {
@@ -23,10 +23,13 @@ public:
 	void SubDivide(const int n);
 
 	void Insert(Poly *poly);
-	
+	void InsertIfSpace(Poly* poly);
+	void GetAllIntersectingPolygons(Poly* poly, std::vector<Poly*> &container);
+
 	void GetAllQuads(std::vector<Rect> &container) const;
 	void GetAllPoints(std::vector<Point*> &container) const;
 	void GetAllAABB(std::vector<Rect*> &container) const;
+	void GetAllCircles(std::vector<Circle*>& container) const;
 	
 	void PrintAllQuads() const;
 	

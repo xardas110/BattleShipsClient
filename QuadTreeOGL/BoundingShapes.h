@@ -5,12 +5,13 @@
 
 struct Point;
 struct Rect;
+struct Circle;
 
 struct Poly
 {
 	enum Types
 	{
-		Point, Rectangle, Null
+		Null, Point, Rectangle, Circle
 	};
 
 	Poly(Types type);
@@ -32,16 +33,18 @@ struct Rect : public Poly
 	glm::mat4 GetTranslation() const;
 
 	glm::vec3 GetMinBounds() const;
+	
 	glm::vec3 GetMaxBounds() const;
 	
 	void Print() const;
 
 	glm::vec3 C, E;
 	//virtual bool Intersect(const Poly* poly);
-	virtual bool Intersect(::Poly *poly);
+	virtual bool Intersect(::Poly *poly) override;
 private:
 	bool IntersectPoint(const ::Point* point) const;
 	bool IntersectRect(const ::Rect* rect) const;
+	bool IntersectCircle(const ::Circle* circle) const;
 };
 
 struct Point : public Poly
@@ -51,8 +54,31 @@ struct Point : public Poly
 
 	glm::mat4 GetTranslation() const;
 	glm::vec3 point;
-
+	float pointThickness{.01f};
+	
 	virtual bool Intersect(::Poly* poly) override;
 private:
 	bool IntersectRect(const Rect* rect) const;
+	bool IntersectPoint(const Point* point) const;
+	bool IntersectCircle(const ::Circle* circle) const;
+};
+
+
+struct Circle : public Poly
+{
+	Circle(glm::vec3 centre, float radius);
+
+	glm::mat4 GetTranslation() const;
+	
+	virtual bool Intersect(Poly *poly) override;
+	
+	bool IntersectPoint(const ::Point* point) const;
+	
+	bool IntersectRect(const ::Rect* rect) const;
+	
+	bool IntersectCircle(const ::Circle* circle) const;
+
+	glm::vec3 C;
+	float R;
+
 };

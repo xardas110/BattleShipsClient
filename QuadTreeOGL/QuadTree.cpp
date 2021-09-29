@@ -75,7 +75,10 @@ void QuadTree::SubDivide(const int n)
 void QuadTree::Insert(Poly* poly)
 {
 	if (!this->bounds.Intersect(poly))
+	{
+		std::cout << "Bounds failing" << std::endl;
 		return;
+	}
 
 	if (polygons.size() < MAX_POINTS_PR_QUAD)
 	{	
@@ -89,6 +92,33 @@ void QuadTree::Insert(Poly* poly)
 		for (auto i = 0; i < Size; i++)
 			Nodes[i]->Insert(poly);
 	}
+}
+
+void QuadTree::InsertIfSpace(Poly* poly)
+{
+	std::vector<Poly*> possibleIntersectionContainer;
+	GetAllIntersectingPolygons(poly, possibleIntersectionContainer);
+	
+	for (auto* polygon : possibleIntersectionContainer)
+		if (polygon->Intersect(poly))
+			return;
+
+	std::cout << "possible intersecting polygons size: " << possibleIntersectionContainer.size() << std::endl;
+	
+	Insert(poly);
+}
+
+void QuadTree::GetAllIntersectingPolygons(Poly* poly, std::vector<Poly*> &container)
+{
+	if (!this->bounds.Intersect(poly))
+		return;
+
+	for (auto* polygon : polygons)
+		container.push_back(polygon);
+
+	if (IsSubDivided())
+		for (auto i = 0; i < Size; i++)
+			Nodes[i]->GetAllIntersectingPolygons(poly, container);
 }
 
 void QuadTree::GetAllQuads(std::vector<Rect>& container) const
@@ -120,6 +150,17 @@ void QuadTree::GetAllAABB(std::vector<Rect*>& container) const
 	if (IsSubDivided())
 		for (auto i = 0; i < Size; i++)
 			Nodes[i]->GetAllAABB(container);
+}
+
+void QuadTree::GetAllCircles(std::vector<Circle*>& container) const
+{
+	for (auto* point : polygons)
+		if (point->GetType() == Poly::Types::Circle)
+			container.push_back(dynamic_cast<::Circle*>(point));
+
+	if (IsSubDivided())
+		for (auto i = 0; i < Size; i++)
+			Nodes[i]->GetAllCircles(container);
 }
 
 void QuadTree::PrintAllQuads() const

@@ -25,12 +25,12 @@ glm::mat4 Rect::GetTranslation() const
 
 glm::vec3 Rect::GetMinBounds() const
 {
-	return -E;
+	return C-E;
 }
 
 glm::vec3 Rect::GetMaxBounds() const
 {
-	return E;
+	return C+E;
 }
 
 void Rect::Print() const
@@ -42,12 +42,16 @@ bool Rect::Intersect(::Poly* poly)
 {
 	switch (poly->GetType())
 	{
+	case ::Poly::Types::Null:
+		break;
 	case ::Poly::Types::Point:
 		return IntersectPoint(dynamic_cast<::Point*>(poly));
 	case ::Poly::Types::Rectangle:
 		return IntersectRect(dynamic_cast<::Rect*>(poly));
+	case ::Poly::Types::Circle:
+		return IntersectCircle(dynamic_cast<::Circle*>(poly));
 	default:
-		break;
+		throw std::exception("Lack of intersection functions");
 	}
 	return false;
 }
@@ -80,6 +84,30 @@ bool Rect::IntersectRect(const::Rect* rect) const
 	return true;
 }
 
+bool Rect::IntersectCircle(const ::Circle* circle) const
+{
+	//compute closest point in box to point
+	const auto PC = circle->C;
+	const auto BMin = this->C - this->E;
+	const auto BMax = this->C + this->E;
+
+	::Point closestInBox{};
+	for (auto i = 0; i < 3; i++)
+	{
+		if (PC[i] > BMin[i] && PC[i] < BMax[i])
+			closestInBox.point[i] = PC[i];
+		else
+		{
+			if (PC[i] < BMin[i])
+				closestInBox.point[i] = BMin[i];
+			else
+				closestInBox.point[i] = BMax[i];
+		}
+	}
+
+	return glm::distance(closestInBox.point, circle->C) < circle->R;
+}
+
 glm::mat4 Point::GetTranslation() const
 {
 	glm::mat4 model(1.f);
@@ -92,10 +120,16 @@ bool Point::Intersect(::Poly* poly)
 {
 	switch (poly->GetType())
 	{
+	case ::Poly::Types::Null:
+		break;
 	case ::Poly::Types::Rectangle:
 		return IntersectRect(dynamic_cast<::Rect*>(poly));
+	case ::Poly::Types::Point:
+		return IntersectPoint(dynamic_cast<::Point*>(poly));
+	case ::Poly::Types::Circle:
+		return IntersectCircle(dynamic_cast<::Circle*>(poly));
 	default:
-		break;
+		throw std::exception("Lack of intersection function");
 	}
 	return false;
 }
@@ -106,6 +140,87 @@ bool Point::IntersectRect(const Rect* rect) const
 	return pointC.x < rect->E.x&& pointC.x > -rect->E.x && pointC.y < rect->E.y&& pointC.y > -rect->E.y;
 }
 
+bool Point::IntersectPoint(const Point* point) const
+{
+	if (glm::distance(point->point, this->point) < point->pointThickness + this->pointThickness)
+		return true;
+	return false;
+}
+
+bool Point::IntersectCircle(const ::Circle* circle) const
+{
+	return glm::distance(this->point, circle->C) < circle->R + this->pointThickness;
+}
+
+Circle::Circle(glm::vec3 centre, float radius)
+	:Poly(Types::Circle), C(centre), R(radius)
+{
+	
+}
+
+glm::mat4 Circle::GetTranslation() const
+{
+	glm::mat4 model(1.f);
+	model[0][0] = R;
+	model[1][1] = R;
+	model[2][2] = R;
+	model[3][0] = C.x;
+	model[3][1] = C.y;
+	model[3][2] = C.z;
+	return model;
+}
+
+bool Circle::Intersect(Poly* poly)
+{
+	switch (poly->GetType())
+	{
+		case Poly::Types::Null:
+			break;
+		case Poly::Types::Point:
+			return IntersectPoint(dynamic_cast<::Point*>(poly));
+		case Poly::Types::Circle:
+			return IntersectCircle(dynamic_cast<::Circle*>(poly));
+		case Poly::Types::Rectangle:
+			return IntersectRect(dynamic_cast<::Rect*>(poly));
+		default:
+			throw std::exception("lacking intersection method");
+	}
+	return false;
+}
+
+bool Circle::IntersectPoint(const ::Point* point) const
+{
+	return glm::distance(point->point, this->C) < this->R + point->pointThickness;
+}
+
+bool Circle::IntersectRect(const ::Rect* rect) const
+{
+	//compute closest point in box to point
+	const auto PC = this->C;
+	const auto BMin = rect->C - rect->E;
+	const auto BMax = rect->C + rect->E;
+
+	::Point closestInBox{};
+	for (auto i = 0; i < 3; i++)
+	{
+		if (PC[i] > BMin[i] && PC[i] < BMax[i])
+			closestInBox.point[i] = PC[i];
+		else
+		{
+			if (PC[i] < BMin[i])
+				closestInBox.point[i] = BMin[i];
+			else
+				closestInBox.point[i] = BMax[i];
+		}
+	}
+
+	return glm::distance(closestInBox.point, this->C) < this->R;
+}
+
+bool Circle::IntersectCircle(const ::Circle* circle) const
+{
+	return glm::distance(circle->C, this->C) < this->R + circle->R;
+}
 
 Poly::Poly(Types type)
 	: Type(type)

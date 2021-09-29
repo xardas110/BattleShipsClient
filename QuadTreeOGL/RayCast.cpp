@@ -8,7 +8,7 @@ bool RayCast::Intersect(const Rect& rect, float &tmin, glm::vec3 &q)
 	auto min = rect.GetMinBounds();
 	auto max = rect.GetMaxBounds();
 
-	const auto pc = P - rect.C;
+	const auto pc = rect.C;
 	
 	for (auto i= 0; i< 3; i++)
 		if (D[i] < FLT_EPSILON)
