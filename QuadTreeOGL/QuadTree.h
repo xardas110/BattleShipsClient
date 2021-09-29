@@ -7,8 +7,6 @@
 
 #define MAX_POINTS_PR_QUAD 4
 
-
-
 class QuadTree
 {
 	enum Coord
@@ -24,17 +22,18 @@ public:
 	void SubDivide();
 	void SubDivide(const int n);
 
-	void Insert(const Point &point);
+	void Insert(Poly *poly);
 	
-	void GetAllQuads(std::vector<Rect>& container) const;
-	void GetAllPoints(std::vector<Point>& container) const;
+	void GetAllQuads(std::vector<Rect> &container) const;
+	void GetAllPoints(std::vector<Point*> &container) const;
+	void GetAllAABB(std::vector<Rect*> &container) const;
 	
 	void PrintAllQuads() const;
 	
 	const Rect& GetBounds() const;
 private:
 	Rect bounds;
-	std::vector<Point> points;
+	std::vector<Poly*> polygons;
 	QuadTree** Nodes;
 };
 

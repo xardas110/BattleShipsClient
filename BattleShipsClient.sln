@@ -11,6 +11,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Engine", "Engine\Engine.vcx
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "QuadTreeOGL", "QuadTreeOGL\QuadTreeOGL.vcxproj", "{F351EEDA-751A-474D-87BA-7406CE1D012D}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CollisionsTests", "CollisionsTests\CollisionsTests.vcxproj", "{74548C75-5300-4F7F-8167-91B114C8957F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -51,6 +53,14 @@ Global
 		{F351EEDA-751A-474D-87BA-7406CE1D012D}.Release|x64.Build.0 = Release|x64
 		{F351EEDA-751A-474D-87BA-7406CE1D012D}.Release|x86.ActiveCfg = Release|Win32
 		{F351EEDA-751A-474D-87BA-7406CE1D012D}.Release|x86.Build.0 = Release|Win32
+		{74548C75-5300-4F7F-8167-91B114C8957F}.Debug|x64.ActiveCfg = Debug|x64
+		{74548C75-5300-4F7F-8167-91B114C8957F}.Debug|x64.Build.0 = Debug|x64
+		{74548C75-5300-4F7F-8167-91B114C8957F}.Debug|x86.ActiveCfg = Debug|Win32
+		{74548C75-5300-4F7F-8167-91B114C8957F}.Debug|x86.Build.0 = Debug|Win32
+		{74548C75-5300-4F7F-8167-91B114C8957F}.Release|x64.ActiveCfg = Release|x64
+		{74548C75-5300-4F7F-8167-91B114C8957F}.Release|x64.Build.0 = Release|x64
+		{74548C75-5300-4F7F-8167-91B114C8957F}.Release|x86.ActiveCfg = Release|Win32
+		{74548C75-5300-4F7F-8167-91B114C8957F}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

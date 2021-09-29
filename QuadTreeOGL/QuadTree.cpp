@@ -72,14 +72,14 @@ void QuadTree::SubDivide(const int n)
 	}
 }
 
-void QuadTree::Insert(const Point& point)
+void QuadTree::Insert(Poly* poly)
 {
-	if (!this->bounds.Intersect(point))
+	if (!this->bounds.Intersect(poly))
 		return;
 
-	if (points.size() < MAX_POINTS_PR_QUAD)
+	if (polygons.size() < MAX_POINTS_PR_QUAD)
 	{	
-		points.push_back(point);
+		polygons.push_back(poly);
 	}
 	else
 	{	
@@ -87,7 +87,7 @@ void QuadTree::Insert(const Point& point)
 			SubDivide();			
 		
 		for (auto i = 0; i < Size; i++)
-			Nodes[i]->Insert(point);
+			Nodes[i]->Insert(poly);
 	}
 }
 
@@ -100,14 +100,26 @@ void QuadTree::GetAllQuads(std::vector<Rect>& container) const
 				Nodes[i]->GetAllQuads(container);
 }
 
-void QuadTree::GetAllPoints(std::vector<Point>& container) const
+void QuadTree::GetAllPoints(std::vector<Point*>& container) const
 {
-	for (const auto &point : points)
-		container.push_back(point);
+	for (auto *point : polygons)
+		if (point->GetType() == Poly::Types::Point)
+			container.push_back(dynamic_cast<::Point*>(point));
 
 	if (IsSubDivided())
 		for (auto i = 0; i < Size; i++)
 			Nodes[i]->GetAllPoints(container);
+}
+
+void QuadTree::GetAllAABB(std::vector<Rect*>& container) const
+{
+	for (auto* point : polygons)
+		if (point->GetType() == Poly::Types::Rectangle)
+			container.push_back(dynamic_cast<::Rect*>(point));
+
+	if (IsSubDivided())
+		for (auto i = 0; i < Size; i++)
+			Nodes[i]->GetAllAABB(container);
 }
 
 void QuadTree::PrintAllQuads() const

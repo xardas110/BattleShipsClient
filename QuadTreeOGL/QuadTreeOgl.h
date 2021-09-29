@@ -1,5 +1,6 @@
 #pragma once
 #include "QuadTree.h"
+#include "../include/glm/glm.hpp"
 #include "../Engine/Camera.h"
 #include "../Engine/Game.h"
 #include "../Engine/Shader.h"
@@ -27,6 +28,8 @@ public:
 	virtual void OnRender() override;
 
 private:
+	void DrawQuadTree(std::shared_ptr<Shader> primitiveMaterialShader, const glm::mat4& projectView);
+
 	std::shared_ptr<Shader> primitiveMaterialShader;
 	
 	std::shared_ptr<Shader> primitiveTextureShader;
@@ -37,6 +40,7 @@ private:
 	
 	std::unique_ptr<Mesh> RectangleMesh;
 	std::unique_ptr<Mesh> PointMesh;
+	std::unique_ptr<Mesh> FilledQuad;
 	
 	Skybox skybox;
 	Camera camera;

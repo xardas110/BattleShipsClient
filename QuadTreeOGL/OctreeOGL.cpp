@@ -29,11 +29,12 @@ int QuadTreeOGL::OnLoad()
 
 	RectangleMesh = Mesh::CreateQuadLines();
 	PointMesh = Mesh::CreatePoint();
+	FilledQuad = Mesh::CreateQuad();
 	
 	quadTree = std::make_unique<QuadTree>(QuadTree({ { 0.f, 0.f, 0.f, }, { 4.f, 4.f, 0.f } }));
 
 	quadTree->PrintAllQuads();
-	
+	//quadTree->SubDivide(2);
 	glPointSize(5.f);
 	
 	return true;
@@ -48,7 +49,6 @@ void QuadTreeOGL::OnRender()
 	Application::SetColorMask(TRUE, TRUE, TRUE, TRUE);
 
 	
-	glm::mat4 model(1.f);
 	const glm::mat4 view = camera.GetViewMatrix();
 	const glm::mat4 project = camera.GetProjectionMatrix();
 	const glm::mat4 projectView = project * view;
@@ -65,37 +65,53 @@ void QuadTreeOGL::OnRender()
 	primitiveMaterialShader->BindVec3("diffuse", glm::vec3(0.6f, 0.6f, 0.6f));
 	primitiveMaterialShader->BindVec3("specular", glm::vec3(1.f, 1.f, 1.f));
 	primitiveMaterialShader->BindFloat("shininess", 64.f);
+	
+	DrawQuadTree(primitiveMaterialShader, projectView);
+	
+	Application::SwapBuffer(win->GetRenderWindow());
+}
+
+void QuadTreeOGL::DrawQuadTree(std::shared_ptr<Shader> primitiveMaterialShader, const glm::mat4& projectView)
+{
+	auto model = glm::mat4(1.f);
+
+	std::vector<Rect> drawContainerQuads;
+	std::vector<Point*> drawContainerPoints;
+	std::vector<Rect*> drawContainerRectangles;
+
+	quadTree->GetAllQuads(drawContainerQuads);
+	quadTree->GetAllPoints(drawContainerPoints);
+	quadTree->GetAllAABB(drawContainerRectangles);
 
 	primitiveMaterialShader->BindMat4("worldspace", model);
 	primitiveMaterialShader->BindMat4("MVP", projectView * model);
-	
 
-	std::vector<Rect> drawContainerQuads;
-	std::vector<Point> drawContainerPoints;
-	
-	quadTree->GetAllQuads(drawContainerQuads);
-	quadTree->GetAllPoints(drawContainerPoints);
-	
-	for (auto &rect : drawContainerQuads)
+	for (auto& rect : drawContainerQuads)
 	{
 		model = rect.GetTranslation();
 		primitiveMaterialShader->BindMat4("MVP", projectView * model);
 		RectangleMesh->Draw(GL_LINE_LOOP);
 	}
 
-	for (auto& point : drawContainerPoints)
+	for (auto point : drawContainerPoints)
 	{
-		model = point.GetTranslation();
-		std::cout << "point loacet :" <<  point.point.x << " " << point.point.y << std::endl;
-		std::cout << "point size cointainer " <<drawContainerPoints.size() << std::endl;
+		model = point->GetTranslation();
 		primitiveMaterialShader->BindMat4("MVP", projectView * model);
 		primitiveMaterialShader->BindVec3("ambient", glm::vec3(1.0, 0.0f, 0.0f));
 		primitiveMaterialShader->BindVec3("diffuse", glm::vec3(1.0f, 0.0f, 0.0f));
 		primitiveMaterialShader->BindVec3("specular", glm::vec3(1.f, 0.f, 0.f));
 		PointMesh->Draw(GL_POINTS);
 	}
-	
-	Application::SwapBuffer(win->GetRenderWindow());
+
+	for (auto rectangle : drawContainerRectangles)
+	{
+		model = rectangle->GetTranslation();
+		primitiveMaterialShader->BindMat4("MVP", projectView * model);
+		primitiveMaterialShader->BindVec3("ambient", glm::vec3(1.0, 0.0f, 0.0f));
+		primitiveMaterialShader->BindVec3("diffuse", glm::vec3(1.0f, 0.0f, 0.0f));
+		primitiveMaterialShader->BindVec3("specular", glm::vec3(1.f, 0.f, 0.f));
+		FilledQuad->Draw(GL_TRIANGLES);
+	}
 }
 
 void QuadTreeOGL::OnUpdate(UpdateEvent& e)
@@ -140,7 +156,9 @@ void QuadTreeOGL::OnMouseClick(MouseClickEvent& e)
 		if (ray.Intersect(box, tMin))
 		{		
 			glm::vec3 intersectPoint = camera.GetPosition() + (radyDir3 * tMin);
-			quadTree->Insert(intersectPoint);
+			//Sometimes this z value ends up as a weird number, investigate.
+			intersectPoint.z = 0.f;
+			quadTree->Insert(new Rect(intersectPoint, {0.2f, 0.2f, 0.f}));
 
 			std::cout << "intersecting" << std::endl;
 			std::cout << intersectPoint.x << " " << intersectPoint.y << " " << intersectPoint.z << std::endl;
