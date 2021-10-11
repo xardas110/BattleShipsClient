@@ -12,6 +12,6 @@ private:
 	__m128 ORIG, DIR, INVDIR;
 public:
 	RayCast(_In_ const glm::vec3 orig, _In_ const glm::vec3 dir);
-	bool _vectorcall Intersect(_In_ const Bounding::Box& b);
-	bool _vectorcall Intersect(_In_ const Bounding::Box& b, float& tMin);
+	bool _vectorcall Intersect(_In_ const Box& b);
+	bool _vectorcall Intersect(_In_ const Box& b, float& tMin);
 };

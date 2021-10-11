@@ -49,6 +49,6 @@ public:
 	static unsigned int		LoadCubeMapTextures(std::vector<std::string> textures);
 	static WNDPROC			GetWNDPROC();
 	std::shared_ptr<Window> callWindow;
-
+	std::weak_ptr<Game>		wpGame;
 };
 

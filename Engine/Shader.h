@@ -15,6 +15,6 @@ public:
 	void BindVec3(const std::string& name, glm::vec3 vec);
 	void BindVec2(const std::string& name, glm::vec3 vec);
 	void BindInt(const std::string& name, int id);
-	void BindFloat(const std::string& name, int id);
+	void BindFloat(const std::string& name, float id);
 	Shader(const char* vertexPath, const char* fragPath);
 };

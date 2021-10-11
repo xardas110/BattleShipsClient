@@ -11,7 +11,7 @@ RayCast::RayCast(_In_ const glm::vec3 orig, _In_ const glm::vec3 dir)
 	//std::cout << ORIG.m128_f32[3] << " " << DIR.m128_f32[3] << " " << INVDIR.m128_f32[3] << std::endl;
 }
 
-bool RayCast::Intersect(_In_ const Bounding::Box& b)
+bool RayCast::Intersect(_In_ const Box& b)
 {
 	float  txMin, txMax, tyMin, tyMax, tzMin, tzMax;
 	txMin = (b.Bounds[(int)(this->ORIG.m128_f32[3])].m128_f32[0] - this->ORIG.m128_f32[0]) * this->INVDIR.m128_f32[0];
@@ -42,7 +42,7 @@ bool RayCast::Intersect(_In_ const Bounding::Box& b)
 	return true;
 }
 
-bool RayCast::Intersect(_In_ const Bounding::Box& b, float &tMin)
+bool RayCast::Intersect(_In_ const Box& b, float &tMin)
 {
 	float  txMin, txMax, tyMin, tyMax, tzMin, tzMax;
 	txMin = (b.Bounds[(int)(this->ORIG.m128_f32[3])].m128_f32[0] - this->ORIG.m128_f32[0]) * this->INVDIR.m128_f32[0];
@@ -50,8 +50,6 @@ bool RayCast::Intersect(_In_ const Bounding::Box& b, float &tMin)
 
 	tyMin = (b.Bounds[(int)this->DIR.m128_f32[3]].m128_f32[1] - this->ORIG.m128_f32[1]) * this->INVDIR.m128_f32[1];
 	tyMax = (b.Bounds[1 - (int)this->DIR.m128_f32[3]].m128_f32[1] - this->ORIG.m128_f32[1]) * this->INVDIR.m128_f32[1];
-
-	std::cout << "Failed 0 check" << std::endl;
 	
 	if ((txMin > tyMax) || (tyMin > txMax))
 		return false;
@@ -60,7 +58,6 @@ bool RayCast::Intersect(_In_ const Bounding::Box& b, float &tMin)
 	if (tyMax < txMax)
 		txMax = tyMax;
 
-	std::cout << "Failed 1 check" << std::endl;
 	
 	tzMin = (b.Bounds[(int)this->INVDIR.m128_f32[3]].m128_f32[2] - this->ORIG.m128_f32[2]) * this->INVDIR.m128_f32[2];
 	tzMax = (b.Bounds[1 - (int)this->INVDIR.m128_f32[3]].m128_f32[2] - this->ORIG.m128_f32[2]) * this->INVDIR.m128_f32[2];
@@ -71,7 +68,7 @@ bool RayCast::Intersect(_In_ const Bounding::Box& b, float &tMin)
 		txMin = tzMin;
 	if (tzMax < txMax)
 		txMax = tzMax;
-	std::cout << "Failed 2 check" << std::endl;
+
 	//Dont have to take all the t's, because the ray is always rotated in the direction where it gives tmin as the lowest value
 	tMin = fmaxf(fmaxf(txMin, tyMin), tzMin);
 	return true;

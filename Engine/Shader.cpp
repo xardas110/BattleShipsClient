@@ -95,7 +95,7 @@ void Shader::BindInt(const std::string& name, int id)
 	glUniform1i(glGetUniformLocation(ID, name.c_str()), id);
 }
 
-void Shader::BindFloat(const std::string& name, int id)
+void Shader::BindFloat(const std::string& name, float id)
 {
 	glUniform1f(glGetUniformLocation(ID, name.c_str()), id);
 }

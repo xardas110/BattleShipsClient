@@ -1,6 +1,7 @@
 #include "QuadtreeOGL.h"
 #include "../Engine/Raycast.h"
 
+
 QuadTreeOGL::QuadTreeOGL(std::string name, int width, int height, bool vSync)
 	:Game(name, width, height), mX{ 0 }, mY{ 0 }
 {
@@ -8,31 +9,9 @@ QuadTreeOGL::QuadTreeOGL(std::string name, int width, int height, bool vSync)
 
 int QuadTreeOGL::OnLoad()
 {
-	glm::vec3 camPos = glm::vec3(0.0f, 0.0f, 10.0f);
-	camera.SetLookAt(camPos, glm::vec3(0.f, 0.f, -1.f), glm::vec3(0.f, 1.f, 0.f));
-	camera.SetProjection(45.0f, (float)win->GetWidth() / (float)win->GetHeight(), 0.1f, 100.0f);
+	Game::OnLoad();
 	
-	primitiveMaterialShader = std::shared_ptr<Shader>(new Shader("Shaders/PrimitivesMaterial.vs", "Shaders/PrimitivesMaterial.fs"));
-	primitiveTextureShader = std::shared_ptr<Shader>(new Shader("Shaders/PrimitivesTextured.vs", "Shaders/PrimitivesTextured.fs"));
-	skyboxShader = std::shared_ptr<Shader>(new Shader("Shaders/Skybox.vs", "Shaders/Skybox.fs"));
-	
-	std::vector<std::string> textures
-	{
-		"../Textures/Starfield_And_Haze/Textures/Starfield_And_Haze_left.png",
-		"../Textures/Starfield_And_Haze/Textures/Starfield_And_Haze_right.png",
-		"../Textures/Starfield_And_Haze/Textures/Starfield_And_Haze_up.png",
-		"../Textures/Starfield_And_Haze/Textures/Starfield_And_Haze_down.png",
-		"../Textures/Starfield_And_Haze/Textures/Starfield_And_Haze_front.png",
-		"../Textures/Starfield_And_Haze/Textures/Starfield_And_Haze_back.png"
-	};
-	skybox.Init(textures);
-
-	RectangleMesh = Mesh::CreateQuadLines();
-	PointMesh = Mesh::CreatePoint();
-	FilledQuad = Mesh::CreateQuad();
-	CircleMesh = Mesh::CreateCircle(16, 1.f);
-	
-	quadTree = std::make_unique<QuadTree>(QuadTree({ { 0.f, 0.f, 0.f, }, { 4.f, 4.f, 0.f } }));
+	quadTree = std::make_unique<QuadTree>(QuadTree(RBRect::Create({ 0.f, 0.f, 0.f, }, { 4.f, 4.f, 0.f } )));
 
 	quadTree->PrintAllQuads();
 	//quadTree->SubDivide(2);
@@ -43,93 +22,31 @@ int QuadTreeOGL::OnLoad()
 
 void QuadTreeOGL::OnRender()
 {
-	Application::ClearColor(0.f, 0.f, 0.f);
-	Application::GetFrambufferSize(win->GetRenderWindow(), &win->GetWidth(), &win->GetHeight());//this function should run on resize, but im too lazy to add everything
-	Application::SetViewport(0, 0, win->GetWidth(), win->GetHeight());
-	Application::SetDepthMask(FALSE);
-	Application::SetColorMask(TRUE, TRUE, TRUE, TRUE);
-
-	
-	const glm::mat4 view = camera.GetViewMatrix();
-	const glm::mat4 project = camera.GetProjectionMatrix();
-	const glm::mat4 projectView = project * view;
-	const glm::mat4 skyboxView = glm::mat3(view);//removing translation vector for skybox
-	const glm::mat4 skyBoxVP = project * skyboxView;
-
-	skyboxShader->Use();
-	skyboxShader->BindMat4("MVP", skyBoxVP);
-	skybox.Draw(skyboxShader);
-	
-	primitiveMaterialShader->Use();
-	primitiveMaterialShader->BindVec3("camPos", camera.GetPosition());
-	primitiveMaterialShader->BindVec3("ambient", glm::vec3(0.2, 0.2f, 0.2f));
-	primitiveMaterialShader->BindVec3("diffuse", glm::vec3(0.6f, 0.6f, 0.6f));
-	primitiveMaterialShader->BindVec3("specular", glm::vec3(1.f, 1.f, 1.f));
-	primitiveMaterialShader->BindFloat("shininess", 64.f);
-	
-	DrawQuadTree(primitiveMaterialShader, projectView);
-	
-	Application::SwapBuffer(win->GetRenderWindow());
+	Game::OnRender();
 }
 
-void QuadTreeOGL::DrawQuadTree(std::shared_ptr<Shader> primitiveMaterialShader, const glm::mat4& projectView)
+
+glm::vec3 QuadTreeOGL::Get3DMouseDirection(const float mX, const float mY)
 {
-	auto model = glm::mat4(1.f);
+	auto const xHN = ((mX * 2.f) / (float)(win->GetWidth())) - 1.f;
+	auto const yHN = 1.f - ((mY * 2.f) / (float)win->GetHeight());
+	auto inverseView = glm::inverse(camera.GetViewMatrix());
+	auto inverseProj = glm::inverse(camera.GetProjectionMatrix());
 
-	std::vector<Rect> drawContainerQuads;
-	std::vector<Point*> drawContainerPoints;
-	std::vector<Rect*> drawContainerRectangles;
-	std::vector<Circle*> drawContainerCircles;
+	//std::cout << xHN << " " << yHN << std::endl;
+	glm::vec4 hn(xHN, yHN, -1.f, 1.f); //z = -1.f because openGL uses a RH coordinate system
+	glm::vec4 rayClip = inverseProj * hn;
+	rayClip = glm::vec4(rayClip.x, rayClip.y, -1.f, 0.f);
 
-	quadTree->GetAllQuads(drawContainerQuads);
-	quadTree->GetAllPoints(drawContainerPoints);
-	quadTree->GetAllAABB(drawContainerRectangles);
-	quadTree->GetAllCircles(drawContainerCircles);
-
-	primitiveMaterialShader->BindMat4("worldspace", model);
-	primitiveMaterialShader->BindMat4("MVP", projectView * model);
-
-	for (auto& rect : drawContainerQuads)
-	{
-		model = rect.GetTranslation();
-		primitiveMaterialShader->BindMat4("MVP", projectView * model);
-		RectangleMesh->Draw(GL_LINE_LOOP);
-	}
-
-	for (auto *point : drawContainerPoints)
-	{
-		model = point->GetTranslation();
-		primitiveMaterialShader->BindMat4("MVP", projectView * model);
-		primitiveMaterialShader->BindVec3("ambient", glm::vec3(1.0, 0.0f, 0.0f));
-		primitiveMaterialShader->BindVec3("diffuse", glm::vec3(1.0f, 0.0f, 0.0f));
-		primitiveMaterialShader->BindVec3("specular", glm::vec3(1.f, 0.f, 0.f));
-		PointMesh->Draw(GL_POINTS);
-	}
-
-	for (auto *rectangle : drawContainerRectangles)
-	{
-		model = rectangle->GetTranslation();
-		primitiveMaterialShader->BindMat4("MVP", projectView * model);
-		primitiveMaterialShader->BindVec3("ambient", glm::vec3(0.0, 1.0f, 0.0f));
-		primitiveMaterialShader->BindVec3("diffuse", glm::vec3(0.0f, 1.0f, 0.0f));
-		primitiveMaterialShader->BindVec3("specular", glm::vec3(0.f, 1.f, 0.f));
-		FilledQuad->Draw(GL_TRIANGLES);
-	}
-
-	for (auto* circle : drawContainerCircles)
-	{
-		model = circle->GetTranslation();
-		primitiveMaterialShader->BindMat4("MVP", projectView * model);
-		primitiveMaterialShader->BindVec3("ambient", glm::vec3(0.0, 0.0f, 1.0f));
-		primitiveMaterialShader->BindVec3("diffuse", glm::vec3(0.0f, 0.0f, 1.0f));
-		primitiveMaterialShader->BindVec3("specular", glm::vec3(0.f, 0.f, 1.f));
-		CircleMesh->Draw(GL_TRIANGLES);
-	}
+	glm::vec4 rayDir4 = (inverseView * rayClip);
+	glm::vec3 radyDir3(rayDir4.x, rayDir4.y, rayDir4.z);
+	return glm::normalize(radyDir3);
 }
 
 void QuadTreeOGL::OnUpdate(UpdateEvent& e)
 {
-	camera.UpdatePosition(e.deltaTime);
+	Game::OnUpdate(e);
+	
 }
 
 void QuadTreeOGL::OnMouseMove(MouseMoveEvent& e)
@@ -141,31 +58,16 @@ void QuadTreeOGL::OnMouseClick(MouseClickEvent& e)
 {
 	if (e.button == MouseClickEvent::Button::Left && e.state == MouseClickEvent::ButtonState::Pressed)
 	{
-		//Transfering x, y pixel cordinades to -1:1
-		auto const xHN = ((mX * 2.f) / (float)(win->GetWidth())) - 1.f;
-		auto const yHN = 1.f - ((mY * 2.f) / (float)win->GetHeight());
-		auto inverseView = glm::inverse(camera.GetViewMatrix());
-		auto inverseProj = glm::inverse(camera.GetProjectionMatrix());
-
-		//std::cout << xHN << " " << yHN << std::endl;
-		glm::vec4 hn(xHN, yHN, -1.f, 1.f); //z = -1.f because openGL uses a RH coordinate system
-		glm::vec4 rayClip = inverseProj * hn;
-		rayClip = glm::vec4(rayClip.x, rayClip.y, -1.f, 0.f);
-
-		glm::vec4 rayDir4 = (inverseView * rayClip);
-		glm::vec3 radyDir3(rayDir4.x, rayDir4.y, rayDir4.z);
-		radyDir3 = glm::normalize(radyDir3);
+		const glm::vec3 radyDir3 = Get3DMouseDirection(this->mX, this->mY);
 
 		RayCast ray(camera.GetPosition(), radyDir3);
-		float tMin = -FLT_MAX;
-
 		std::cout << "mouse pressed" << std::endl;
-		std::cout << "centre :" << quadTree->GetBounds().E.x << " " << quadTree->GetBounds().E.y;
-
+		std::cout << "centre :" << quadTree->GetBounds()->E.x << " " << quadTree->GetBounds()->E.y;
 		std::cout << "Ray dir: " << radyDir3.x << " " << radyDir3.y << " " << radyDir3.z << std::endl;
 
-		Bounding::Box box(quadTree->GetBounds().C, quadTree->GetBounds().E);
+		Box box(quadTree->GetBounds()->C, quadTree->GetBounds()->E);
 
+		float tMin = -FLT_MAX;
 		if (ray.Intersect(box, tMin))
 		{		
 			glm::vec3 intersectPoint = camera.GetPosition() + (radyDir3 * tMin);
@@ -176,15 +78,27 @@ void QuadTreeOGL::OnMouseClick(MouseClickEvent& e)
 			switch (currentSelected)
 			{
 				case Poly::Types::Rectangle:
-					quadTree->InsertIfSpace(new Rect(intersectPoint, {0.2f, 0.2f, 0.f}));
+					{
+						const auto rect = RRect::Create(intersectPoint, { 0.2f, 0.2f, 0.f });
+						rect->GetRenderSettings()->SetDiffuse({ 0.7f, 0.1f, 0.1f });
+						quadTree->InsertIfSpace(rect);
+					}
 					break;
-				case Poly::Types::Point:
-					quadTree->InsertIfSpace(new Point(intersectPoint));
+					case Poly::Types::Point:
+					{
+						const auto rect = RPoint::Create(intersectPoint);
+						rect->GetRenderSettings()->SetDiffuse({ 1.0f, 0.0f, 0.0f });
+						quadTree->InsertIfSpace(rect);
+					}
 					break;
-				case Poly::Types::Circle:
-					quadTree->InsertIfSpace(new ::Circle(intersectPoint, 0.2f));
+					case Poly::Types::Circle:
+					{
+						const auto rect = RCircle::Create(intersectPoint, 0.2f);
+						rect->GetRenderSettings()->SetDiffuse({ 0.1f, 0.2f, 0.7f });
+						quadTree->InsertIfSpace(rect);
+					}
 					break;
-				default:
+					default:
 					break;
 			}
 
@@ -218,27 +132,22 @@ void QuadTreeOGL::OnKeyPressed(KeyEvent& e)
 	case GLFW_KEY_KP_SUBTRACT:
 		camera.AddVelocityZ(1.f);
 		break;
+	case GLFW_KEY_1:
+		currentSelected = Poly::Types::Point;
+		break;
+	case GLFW_KEY_2:
+		currentSelected = Poly::Types::Rectangle;
+		break;
+	case GLFW_KEY_3:
+		currentSelected = Poly::Types::Circle;
+		break;
 	case GLFW_KEY_R:
-		for (auto i = 0; i< 2000; i++)
-		{
-			const auto floatscale = 0.001f;
-			const auto scale = 1000.f;
-			const auto randVal = 8.f * scale;
-			float x = (rand() % (int)randVal);
-			float y = (rand() % (int)randVal);
-			x -= randVal * 0.5f;
-			y -= randVal * 0.5f;
-			quadTree->Insert(new Point({ x * floatscale, y* floatscale, 0.f }));
-		}
+		quadTree->AddRandomizedPoints(2000);
 		break;
 	default:
 		break;
 	}
 
-	if (e.key > 48 && e.key < 58)
-	{
-		currentSelected = (Poly::Types)(e.key - 48);
-	}
 }
 
 void QuadTreeOGL::OnKeyReleased(KeyEvent& e)

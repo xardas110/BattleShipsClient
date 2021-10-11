@@ -147,7 +147,8 @@ Application& Application::Get()
 
 int Application::Run(std::shared_ptr<Game> g)
 {
-	if (g->Init() != 1) return -1;
+	if (g->Init() != 1) return -1; wpGame = g;
+	
 	if (SetGLFWCallback(g->win)!= 1) return -2;
 	currHandle = g->win->hwnd;//has to be before Onload and after Init, TODO:find a better place for this
 	currWinProc = (WNDPROC)GetWindowLongPtr(currHandle, GWLP_WNDPROC);

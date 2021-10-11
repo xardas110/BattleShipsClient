@@ -1,4 +1,5 @@
 #include "RayCast.h"
+#include <iostream>
 
 bool RayCast::Intersect(const Rect& rect, float &tmin, glm::vec3 &q)
 {

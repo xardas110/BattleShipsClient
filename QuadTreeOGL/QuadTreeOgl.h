@@ -29,26 +29,12 @@ public:
 
 private:
 	void DrawQuadTree(std::shared_ptr<Shader> primitiveMaterialShader, const glm::mat4& projectView);
-
-	std::shared_ptr<Shader> primitiveMaterialShader;
-	
-	std::shared_ptr<Shader> primitiveTextureShader;
-	
-	std::shared_ptr<Shader> skyboxShader;
-	
-	std::shared_ptr<Texture>testTex;
-	
-	std::unique_ptr<Mesh> RectangleMesh;
-	std::unique_ptr<Mesh> PointMesh;
-	std::unique_ptr<Mesh> FilledQuad;
-	std::unique_ptr<Mesh> CircleMesh;
-	
+	glm::vec3 Get3DMouseDirection(const float mX, const float mY);
+		
 	std::unique_ptr<QuadTree> quadTree{nullptr};
 
 	Poly::Types currentSelected = Poly::Rectangle;
 	
-	Skybox skybox;
-	Camera camera;
 	float mX, mY;
 
 };

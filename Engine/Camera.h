@@ -6,9 +6,9 @@
 class Camera
 {
 private:
-	struct glm::vec3		translate;
-	struct glm::mat4		view, projection;
-	struct glm::vec3		velocity;
+	glm::vec3		translate;
+	glm::mat4		view, projection;
+	glm::vec3		velocity;
 public:
 	Camera();
 	void			SetLookAt(glm::vec3 pos, glm::vec3 dir, glm::vec3 up);

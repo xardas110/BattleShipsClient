@@ -1,7 +1,13 @@
 #include "QuadTree.h"
+#include <iostream>
+#include <ostream>
 #include "Macros.h"
+#include "../Engine/BoundingShapes.h"
+#include "../Engine/Collision.h"
 
-QuadTree::QuadTree(const Rect& rect)
+struct Poly;
+
+QuadTree::QuadTree(const std::shared_ptr<RBRect>& rect)
 	: bounds(rect)
 {
 	Nodes = new QuadTree * [Size];
@@ -23,33 +29,33 @@ void QuadTree::SubDivide()
 	if (IsSubDivided())
 		return;
 
-	const auto HalfExtent = bounds.E * 0.5f;
+	const auto HalfExtent = bounds->E * 0.5f;
 	const auto &HalfExtentX = HalfExtent.x;
 	const auto &HalfExtentY = HalfExtent.y;
 
 	Nodes[NW] = new QuadTree
-	({
-		glm::vec3(bounds.C.x - HalfExtentX, bounds.C.y + HalfExtentY, 0.f),
+	(RBRect::Create(
+		glm::vec3(bounds->C.x - HalfExtentX, bounds->C.y + HalfExtentY, 0.f),
 		HalfExtent
-	});
+	));
 
 	Nodes[NE] = new QuadTree
-	({
-		glm::vec3(bounds.C.x + HalfExtentX, bounds.C.y + HalfExtentY, 0.f),
+	(RBRect::Create(
+		glm::vec3(bounds->C.x + HalfExtentX, bounds->C.y + HalfExtentY, 0.f),
 		HalfExtent
-	});
+	));
 
 	Nodes[SW] = new QuadTree
-	({
-		glm::vec3(bounds.C.x - HalfExtentX, bounds.C.y - HalfExtentY, 0.f),
+	(RBRect::Create(
+		glm::vec3(bounds->C.x - HalfExtentX, bounds->C.y - HalfExtentY, 0.f),
 		HalfExtent
-	});
+	));
 
 	Nodes[SE] = new QuadTree
-	({
-		glm::vec3(bounds.C.x + HalfExtentX, bounds.C.y - HalfExtentY, 0.f),
+	(RBRect::Create(
+		glm::vec3(bounds->C.x + HalfExtentX, bounds->C.y - HalfExtentY, 0.f),
 		HalfExtent
-	});
+	));
 	
 }
 
@@ -72,12 +78,12 @@ void QuadTree::SubDivide(const int n)
 	}
 }
 
-void QuadTree::Insert(Poly* poly)
+bool QuadTree::Insert(std::shared_ptr<Poly> poly)
 {
-	if (!this->bounds.Intersect(poly))
+	if (!Collision::Intersect(this->bounds.get(), poly.get()))
 	{
 		std::cout << "Bounds failing" << std::endl;
-		return;
+		return false;
 	}
 
 	if (polygons.size() < MAX_POINTS_PR_QUAD)
@@ -94,26 +100,27 @@ void QuadTree::Insert(Poly* poly)
 	}
 }
 
-void QuadTree::InsertIfSpace(Poly* poly)
+bool QuadTree::InsertIfSpace(std::shared_ptr<Poly> poly)
 {
-	std::vector<Poly*> possibleIntersectionContainer;
+	std::vector<std::shared_ptr<Poly>> possibleIntersectionContainer;
 	GetAllIntersectingPolygons(poly, possibleIntersectionContainer);
 	
-	for (auto* polygon : possibleIntersectionContainer)
-		if (polygon->Intersect(poly))
-			return;
+	for (const auto &polygon : possibleIntersectionContainer)
+		if (Collision::Intersect(polygon.get(), poly.get()))
+			return false;
 
 	std::cout << "possible intersecting polygons size: " << possibleIntersectionContainer.size() << std::endl;
 	
-	Insert(poly);
+	return Insert(poly);
 }
 
-void QuadTree::GetAllIntersectingPolygons(Poly* poly, std::vector<Poly*> &container)
+void QuadTree::GetAllIntersectingPolygons(std::shared_ptr<Poly> poly, std::vector<std::shared_ptr<Poly>> &container)
 {
-	if (!this->bounds.Intersect(poly))
+	
+	if (!Collision::Intersect(this->bounds.get(), poly.get()))
 		return;
 
-	for (auto* polygon : polygons)
+	for (const auto polygon : polygons)
 		container.push_back(polygon);
 
 	if (IsSubDivided())
@@ -121,7 +128,7 @@ void QuadTree::GetAllIntersectingPolygons(Poly* poly, std::vector<Poly*> &contai
 			Nodes[i]->GetAllIntersectingPolygons(poly, container);
 }
 
-void QuadTree::GetAllQuads(std::vector<Rect>& container) const
+void QuadTree::GetAllQuads(std::vector<std::shared_ptr<RBRect>>& container) const
 {
 	container.push_back(bounds);
 
@@ -130,33 +137,33 @@ void QuadTree::GetAllQuads(std::vector<Rect>& container) const
 				Nodes[i]->GetAllQuads(container);
 }
 
-void QuadTree::GetAllPoints(std::vector<Point*>& container) const
+void QuadTree::GetAllPoints(std::vector<std::shared_ptr<RPoint>>& container) const
 {
-	for (auto *point : polygons)
+	for (const auto point : polygons)
 		if (point->GetType() == Poly::Types::Point)
-			container.push_back(dynamic_cast<::Point*>(point));
+			container.push_back(std::dynamic_pointer_cast<::RPoint>(point));
 
 	if (IsSubDivided())
 		for (auto i = 0; i < Size; i++)
 			Nodes[i]->GetAllPoints(container);
 }
 
-void QuadTree::GetAllAABB(std::vector<Rect*>& container) const
+void QuadTree::GetAllAABB(std::vector<std::shared_ptr<RRect>>& container) const
 {
-	for (auto* point : polygons)
+	for (const auto point : polygons)
 		if (point->GetType() == Poly::Types::Rectangle)
-			container.push_back(dynamic_cast<::Rect*>(point));
+			container.push_back(std::dynamic_pointer_cast<::RRect>(point));
 
 	if (IsSubDivided())
 		for (auto i = 0; i < Size; i++)
 			Nodes[i]->GetAllAABB(container);
 }
 
-void QuadTree::GetAllCircles(std::vector<Circle*>& container) const
+void QuadTree::GetAllCircles(std::vector<std::shared_ptr<RCircle>>& container) const
 {
-	for (auto* point : polygons)
+	for (const auto point : polygons)
 		if (point->GetType() == Poly::Types::Circle)
-			container.push_back(dynamic_cast<::Circle*>(point));
+			container.push_back(std::dynamic_pointer_cast<::RCircle>(point));
 
 	if (IsSubDivided())
 		for (auto i = 0; i < Size; i++)
@@ -165,14 +172,32 @@ void QuadTree::GetAllCircles(std::vector<Circle*>& container) const
 
 void QuadTree::PrintAllQuads() const
 {
-	bounds.Print();
+	bounds->Print();
 
 	if (IsSubDivided())
 		for (auto i = 0; i < Size; i++)
 			Nodes[i]->PrintAllQuads();		
 }
 
-const Rect& QuadTree::GetBounds() const
+void QuadTree::AddRandomizedPoints(const int numPoints)
+{
+	for (auto i = 0; i < numPoints; i++)
+	{
+		const auto floatScale = 0.001f;
+		const auto scale = 1000.f;
+		const auto randVal = 8.f * scale;
+		float x = (rand() % (int)randVal);
+		float y = (rand() % (int)randVal);
+		x -= randVal * 0.5f;
+		y -= randVal * 0.5f;
+		auto p = RPoint::Create({ x * floatScale, y * floatScale, 0.f });
+		p->GetRenderSettings()->SetDiffuse({ 1.f, 0.f, 0.f });
+		p->GetRenderSettings()->SetSpecular({ 1.f, 0.f, 0.f });
+		Insert(p);
+	}
+}
+
+const std::shared_ptr<RBRect> &QuadTree::GetBounds() const
 {
 	return bounds;
 }
