@@ -130,6 +130,34 @@ bool Rect::IntersectCircle(const std::shared_ptr<::Circle> circle) const
 	return glm::distance(closestInBox.point, circle->C) < circle->R;
 }
 
+ORect::ORect()
+	:Rect({0.f, 0.f,0.f}, {0.5f, 0.5f, 0.f}, Poly::Types::ORectangle), orient(glm::quat(0.f, {0.f, 0.f, 0.f}))
+{
+}
+
+ORect::ORect(const glm::vec3& c, const glm::vec3& e, const glm::quat& orient)
+	:Rect(c, e, Poly::Types::ORectangle), orient(orient)
+{
+}
+
+void ORect::SetRotation(const float rotInDeg, const glm::vec3& axis)
+{
+	const glm::quat result = glm::identity<glm::quat>();
+	orient = glm::rotate(result, glm::radians(rotInDeg), axis);
+}
+
+const glm::mat4 ORect::GetTranslation() const
+{
+	glm::mat4 model(1.f);
+	const glm::mat4 rotationMatrix = glm::toMat4(orient);
+	
+	model = glm::translate(model, C);	
+	model = glm::scale(model, E);
+	model = model * rotationMatrix;
+	
+	return model;
+}
+
 const glm::mat4 Point::GetTranslation() const
 {
 	glm::mat4 model(1.f);
@@ -354,6 +382,26 @@ std::shared_ptr<RRect> RRect::Create(const glm::vec3& c, const glm::vec3& e)
 	return std::shared_ptr<RRect>(new RRect(c,e));
 }
 
+bool RRect::Intersect(std::shared_ptr<Poly>& poly)
+{
+	throw std::exception("Not implemented");
+}
+
+bool ORect::IntersectCircle(const std::shared_ptr<::Circle> circle) const
+{
+	throw std::exception("Not implemented");
+}
+
+bool ORect::IntersectRect(const std::shared_ptr<::Rect> rect) const
+{
+	throw std::exception("Not implemented");
+}
+
+bool ORect::IntersectPoint(const std::shared_ptr<::Point> point) const
+{
+	throw std::exception("Not implemented");
+}
+
 RPoint::RPoint()
 {
 	renderMode = 0x0000;
@@ -514,4 +562,46 @@ bool _vectorcall OrientedBox::Intersect(const OrientedBox& OB)
 PolyRender* RBRect::GetRenderSettings()
 {
 	return this;
+}
+
+RORect::~RORect()
+{
+	Game::RemoveFromDrawList(this);
+}
+
+PolyRender* RORect::GetRenderSettings()
+{
+	return this;
+}
+
+std::shared_ptr<RORect> RORect::Create()
+{
+	return std::shared_ptr<RORect>(new RORect);
+}
+
+std::shared_ptr<RORect> RORect::Create(const glm::vec3& c, const glm::vec3& e, const glm::quat& orient)
+{
+	return std::shared_ptr<RORect>(new RORect(c, e, orient));
+}
+
+RORect::RORect()
+	:ORect()
+{
+	Game::AddToDrawList(this);
+}
+
+RORect::RORect(const glm::vec3& c, const glm::vec3& e, const glm::quat& orient)
+	:ORect(c, e, orient)
+{
+	Game::AddToDrawList(this);
+}
+
+Segment::Segment()
+	:Poly(Poly::Types::Segment), A({0.f, 0.f, 0.f}), B({0.f, 1.f, 0.f})
+{
+}
+
+Segment::Segment(const glm::vec3& A, const glm::vec3& B)
+	: Poly(Poly::Types::Segment), A(A), B(B)
+{	
 }

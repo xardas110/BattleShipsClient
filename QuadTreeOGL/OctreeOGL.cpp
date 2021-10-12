@@ -16,13 +16,14 @@ int QuadTreeOGL::OnLoad()
 	quadTree->PrintAllQuads();
 	//quadTree->SubDivide(2);
 	glPointSize(5.f);
-	
+
 	return true;
 }
 
 void QuadTreeOGL::OnRender()
 {
 	Game::OnRender();
+	
 }
 
 
@@ -98,6 +99,15 @@ void QuadTreeOGL::OnMouseClick(MouseClickEvent& e)
 						quadTree->InsertIfSpace(rect);
 					}
 					break;
+					case Poly::Types::ORectangle:
+					{
+						glm::quat rot = glm::identity<glm::quat>();
+						rot = glm::rotate(rot, glm::radians((float)(rand() % 90)), { 0.f, 0.f, 1.f });
+						const auto rect = RORect::Create(intersectPoint, {0.2f, 0.2f, 0.2f}, rot);
+						rect->GetRenderSettings()->SetDiffuse({ 0.5f, 0.2f, 0.7f });
+						quadTree->InsertIfSpace(rect);
+					}
+					break;
 					default:
 					break;
 			}
@@ -140,6 +150,9 @@ void QuadTreeOGL::OnKeyPressed(KeyEvent& e)
 		break;
 	case GLFW_KEY_3:
 		currentSelected = Poly::Types::Circle;
+		break;
+	case GLFW_KEY_4:
+		currentSelected = Poly::Types::ORectangle;
 		break;
 	case GLFW_KEY_R:
 		quadTree->AddRandomizedPoints(2000);

@@ -1,13 +1,13 @@
 #pragma once
 #include <DirectXMath.h>
 
-#include "RenderShapes.h"
 #include <xmmintrin.h>
 #include <memory>
 
-
+#include "../include/glm/gtx/quaternion.hpp"
 #include "../include/glm/fwd.hpp"
 #include "../include/glm/vec3.hpp"
+
 
 struct PolyRender;
 struct Point;
@@ -45,6 +45,25 @@ struct OrientedBox
 		:QUAT(QUAT), invQUAT(DirectX::XMQuaternionConjugate(QUAT)), C(C), E(E)
 	{
 	};
+	OrientedBox(const glm::vec3 &C, const glm::vec3& E, const glm::quat &QUAT)
+	{
+		this->QUAT.m128_f32[0] = QUAT.x;
+		this->QUAT.m128_f32[1] = QUAT.y;
+		this->QUAT.m128_f32[2] = QUAT.z;
+		this->QUAT.m128_f32[3] = QUAT.w;
+		
+		this->C.m128_f32[0] = C.x;
+		this->C.m128_f32[1] = C.y;
+		this->C.m128_f32[2] = C.z;
+		this->C.m128_f32[3] = 0.f;
+
+		this->E.m128_f32[0] = E.x;
+		this->E.m128_f32[1] = E.y;
+		this->E.m128_f32[2] = E.z;
+		this->E.m128_f32[3] = 0.f;
+
+		invQUAT = DirectX::XMQuaternionConjugate(this->QUAT);
+	};
 	DirectX::XMVECTOR QUAT, invQUAT;
 #else
 	OrientedBox(DirectX::XMVECTOR C, DirectX::XMVECTOR E, DirectX::XMMATRIX R)
@@ -63,7 +82,7 @@ struct Poly
 {
 	enum Types
 	{
-		Null = -1, RBRect, Point, Rectangle, Circle, Size
+		Null = -1, RBRect, Point, Rectangle, Circle, ORectangle, Segment, Capsule2D, Size
 	};
 
 	Poly(Types type);
@@ -86,6 +105,27 @@ private:
 	Types Type = Null;
 };
 
+struct Segment : Poly
+{
+	Segment();
+	Segment(const glm::vec3 &A, const glm::vec3 &B);
+
+	Segment(const Segment&) = default;
+	Segment(Segment&&) = default;
+
+	Segment& operator= (const Segment &) = default;
+	Segment& operator= (Segment&&) = default;
+	
+	virtual ~Segment() = default;
+	glm::vec3 A, B;
+};
+
+struct Capsule : Segment
+{
+	float r;
+	
+	//virtual ~Capsule() = default;
+};
 
 struct Rect : Poly
 {
@@ -96,7 +136,7 @@ struct Rect : Poly
 
 	const glm::vec3& GetScale() const;
 
-	const glm::mat4 GetTranslation() const override;
+	virtual const glm::mat4 GetTranslation() const override;
 
 	glm::vec3 GetMinBounds() const;
 
@@ -108,21 +148,30 @@ struct Rect : Poly
 	//virtual bool Intersect(const Poly* poly);
 	bool Intersect(std::shared_ptr<::Poly>& poly) override;
 protected:
+
+	Rect(Poly::Types type) : Poly(type), C{ 0.f, 0.f, 0.f }, E(0.2f, 0.2f, 0.2f) {}
+	Rect(glm::vec3 c, glm::vec3 e, Poly::Types type) : Poly(type), C(c), E(e) {}
+	
 	virtual ~Rect() = default;
-private:
-	bool IntersectPoint(const std::shared_ptr<::Point> point) const;
-	bool IntersectRect(const std::shared_ptr <::Rect> rect) const;
-	bool IntersectCircle(const std::shared_ptr <::Circle> circle) const;
+	virtual bool IntersectPoint(const std::shared_ptr<::Point> point) const;
+	virtual bool IntersectRect(const std::shared_ptr <::Rect> rect) const;
+	virtual bool IntersectCircle(const std::shared_ptr <::Circle> circle) const;
 };
 
 struct ORect: Rect
 {
 	ORect();
-	
-	DirectX::XMVECTOR QUAT, invQUAT;
+	ORect(const glm::vec3 &c, const glm::vec3 &e, const glm::quat &orient);
+	glm::quat orient;
 
-	
+	void SetRotation(const float rotInDeg, const glm::vec3& axis);
+	virtual const glm::mat4 GetTranslation() const override;
+protected:
+	bool IntersectCircle(const std::shared_ptr<::Circle> circle) const override;
+	bool IntersectRect(const std::shared_ptr<::Rect> rect) const override;
+	bool IntersectPoint(const std::shared_ptr<::Point> point) const override;
 };
+
 
 struct Point : Poly
 {
@@ -162,9 +211,7 @@ struct Circle : Poly
 	glm::vec3 C;
 	float R;
 
-protected:
-	virtual ~Circle() = default;
-	
+	virtual ~Circle() = default;	
 };
 
 struct PolyRender
@@ -219,6 +266,29 @@ public:
 
 	static std::shared_ptr<RRect> Create();
 	static std::shared_ptr<RRect> Create(const glm::vec3& c, const glm::vec3& e);
+
+	bool Intersect(std::shared_ptr<Poly>& poly) override;
+
+};
+
+struct RORect : ORect, PolyRender
+{
+private:
+	RORect();
+	RORect(const glm::vec3& c, const glm::vec3& e, const glm::quat &orient);
+public:
+	RORect(const RRect&) = delete;
+	RORect(RRect&&) = delete;
+
+	RORect& operator= (const RORect&) = delete;
+	RORect& operator= (RORect&&) = delete;
+
+	~RORect() override;
+	
+	PolyRender* GetRenderSettings() override;
+
+	static std::shared_ptr<RORect> Create();
+	static std::shared_ptr<RORect> Create(const glm::vec3& c, const glm::vec3& e, const glm::quat &orient);
 };
 
 struct RBRect : Rect, PolyRender

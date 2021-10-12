@@ -4,7 +4,10 @@
 #include "../include/glm/glm.hpp"
 #include <iostream>
 #include <cmath>
-#define PI 3.14159265
+
+using UINT = unsigned int;
+
+#define PI 3.14159265f
 struct Vertex
 {
     Vertex(glm::vec3 p, glm::vec3 norm, glm::vec2 tc)
@@ -118,12 +121,13 @@ std::unique_ptr<Mesh> Mesh::CreatePoint()
     return mesh;
 }
 
-std::unique_ptr<Mesh> Mesh::CreateQuad(const unsigned int size)
+std::unique_ptr<Mesh> Mesh::CreateQuad()
 { 
     unsigned int VAO, VBO, EBO;
     std::vector<Vertex> quadVert;
 
-    const auto s = size * 1.f;
+    const auto s = 1.f;
+	
     quadVert.push_back(Vertex({ s, s, 0.f }, { 0.f, 0.f, 1.f }, { 1.f, 1.f }));
     quadVert.push_back(Vertex({ s, -s, 0.f }, { 0.f, 0.f, 1.f }, { 1.f, 0.f }));
     quadVert.push_back(Vertex({ -s, -s, 0.f }, { 0.f, 0.f, 1.f }, { 0.f, 0.f }));
@@ -156,6 +160,99 @@ std::unique_ptr<Mesh> Mesh::CreateQuad(const unsigned int size)
     glBindVertexArray(0);
 
     std::unique_ptr<Mesh> mesh(new Mesh(VAO, _countof(indices)));
+    return mesh;
+}
+
+std::unique_ptr<Mesh> Mesh::Create2DCapsule()
+{
+    unsigned int VAO, VBO, EBO;
+    std::vector<Vertex> vertices;
+    std::vector<unsigned int> indices;
+	
+    const auto vertexEdgesPerTriangle = 16;
+    const auto radius = 1.f;
+    const auto s = 1.f; //Quad Extents
+	
+    float radiansPerTriangle = (2.f * (PI*0.5f)) / static_cast<float>(vertexEdgesPerTriangle);
+
+    //--------------------Top HalfCircle
+    vertices.emplace_back(Vertex(glm::vec3(0.f, s, 0.f), glm::vec3(0.f, 0.f, 1.f)));
+    vertices.push_back(Vertex({ -cosf(radiansPerTriangle * (float)0.f) * radius, sinf(radiansPerTriangle * (float)0.f) * radius + s, 0.f }, glm::vec3(0.f, 0.f, 1.f)));
+    for (unsigned int i = 1, j = 2; i < vertexEdgesPerTriangle; i++, j++)
+    {
+        //Inverting cos for clockwise order to discard all back faces
+        vertices.push_back(Vertex({ -cosf(radiansPerTriangle * (float)i) * radius, sinf(radiansPerTriangle * (float)i) * radius + s, 0.f }, glm::vec3(0.f, 0.f, 1.f)));
+    	
+        indices.push_back(0U);
+        indices.push_back(i);
+        indices.push_back(j);
+    }
+
+    vertices.push_back(Vertex({ -cosf(radiansPerTriangle * static_cast<float>(vertexEdgesPerTriangle)) * radius, sinf(radiansPerTriangle * static_cast<float>(vertexEdgesPerTriangle)) * radius + static_cast<float>(s), 0.f }, glm::vec3(0.f, 0.f, 1.f)));
+    indices.push_back(0);
+    indices.push_back(vertices.size() - 2);
+    indices.push_back(vertices.size() - 1);
+	//------------------
+	
+    //Middle rectangle -----------------------------
+    vertices.emplace_back(Vertex(glm::vec3(s, s, 0.f), glm::vec3(0.f, 0.f, 1.f)));
+    unsigned int lastIndex = static_cast<UINT>(vertices.size()) - 1;
+
+    vertices.push_back(Vertex({ s, -s, 0.f }, { 0.f, 0.f, 1.f }, { 1.f, 0.f }));
+    vertices.push_back(Vertex({ -s, -s, 0.f }, { 0.f, 0.f, 1.f }, { 0.f, 0.f }));
+    vertices.push_back(Vertex({ -s, s, 0.f }, { 0.f, 0.f, 1.f }, { 0.f, 1.f }));
+
+    indices.push_back(lastIndex);
+    indices.push_back(lastIndex + 1UL);
+    indices.push_back(lastIndex + 3UL);
+    indices.push_back(lastIndex + 1UL);
+    indices.push_back(lastIndex + 2UL);
+    indices.push_back(lastIndex + 3UL);
+    // -----------------------------
+		
+    //--------------------Bot HalfCircle
+    radiansPerTriangle = (2.f * -(PI * 0.5f)) / static_cast<float>(vertexEdgesPerTriangle);
+    vertices.emplace_back(Vertex(glm::vec3(0.f, -s, 0.f), glm::vec3(0.f, 0.f, 1.f)));
+    lastIndex = vertices.size()-1;
+	
+    vertices.push_back(Vertex({ -cosf(radiansPerTriangle * 0.f) * radius,  sinf(radiansPerTriangle * 0.f) * radius -s, 0.f }, glm::vec3(0.f, 0.f, 1.f)));
+	
+    for (unsigned int i = 1, j = 2; i < vertexEdgesPerTriangle; i++, j++)
+    {
+        //Inverting cos for clockwise order to discard all back faces
+        vertices.push_back(Vertex({ -cosf(radiansPerTriangle * static_cast<float>(i)) * radius, sinf(radiansPerTriangle * static_cast<float>(i)) * radius -s, 0.f }, glm::vec3(0.f, 0.f, 1.f)));
+        
+        indices.push_back(lastIndex);
+        indices.push_back(lastIndex+i);
+        indices.push_back(lastIndex+j);
+    }
+    
+    vertices.push_back(Vertex({ -cosf(radiansPerTriangle * static_cast<float>(vertexEdgesPerTriangle)) * radius, sinf(radiansPerTriangle * static_cast<float>(vertexEdgesPerTriangle)) * radius -s, 0.f }, glm::vec3(0.f, 0.f, 1.f)));
+    indices.push_back(lastIndex);
+    indices.push_back(static_cast<UINT>(vertices.size()) - 2);
+    indices.push_back(static_cast<UINT>(vertices.size()) - 1);
+	//-----------------------
+	
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
+
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(indices[0]), indices.data(), GL_STATIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)NULL);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, n));
+    glBindVertexArray(0);
+
+    std::unique_ptr<Mesh> mesh(new Mesh(VAO, static_cast<UINT>(indices.size()) * 3U));
+
     return mesh;
 }
 
@@ -206,7 +303,7 @@ std::unique_ptr<Mesh> Mesh::CreateCircle(const unsigned int vertCount, const flo
     glBindVertexArray(0);
     
     std::unique_ptr<Mesh> mesh(new Mesh(VAO, indices.size() * 3U));
-    //std::cout << "Indices size:" << indices.size()<< std::endl;
+
     return mesh;
     
 }
@@ -220,7 +317,6 @@ std::unique_ptr<Mesh> Mesh::CreateGrid(const unsigned int gridX, const unsigned 
     const auto halfSizeX = (xSize*gridX) * 0.5f;
     const auto halfSizeY = (ySize*gridY) * 0.5f;
 
-    //Gotta add 1 to draw the last line
     for (int y = 0, const columnSize = gridX + 1, const rowSize = gridY + 1, f = columnSize, const sum = columnSize * rowSize; y <= gridY; y++, f--)
     { 
         indices.push_back(columnSize * y);
@@ -261,8 +357,7 @@ std::unique_ptr<Mesh> Mesh::CreateGrid(const unsigned int gridX, const unsigned 
 std::unique_ptr<Mesh> Mesh::CreateSkyBox(const float s)
 {
     unsigned int VAO, VBO;
-    const float skyboxVertices[] = {
-        // positions          
+    const float skyboxVertices[] = {       
         -1.0f,  1.0f, -1.0f,
         -1.0f, -1.0f, -1.0f,
          1.0f, -1.0f, -1.0f,
@@ -319,5 +414,4 @@ std::unique_ptr<Mesh> Mesh::CreateSkyBox(const float s)
 
     std::unique_ptr<Mesh> mesh(new Mesh(VAO, 36));
     return mesh;
-    return std::unique_ptr<Mesh>();
 }

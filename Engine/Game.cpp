@@ -78,6 +78,17 @@ void Game::RemoveFromDrawList(RBRect* rBRect)
 		.erase(std::remove(DrawList[Poly::Types::RBRect].begin(), DrawList[Poly::Types::RBRect].end(), rBRect), DrawList[Poly::Types::RBRect].end());
 }
 
+void Game::AddToDrawList(RORect* roRect)
+{
+	DrawList[Poly::Types::ORectangle].push_back(roRect);
+}
+
+void Game::RemoveFromDrawList(RORect* roRect)
+{
+	DrawList[Poly::Types::ORectangle]
+		.erase(std::remove(DrawList[Poly::Types::ORectangle].begin(), DrawList[Poly::Types::ORectangle].end(), roRect), DrawList[Poly::Types::ORectangle].end());
+}
+
 
 int Game::Init()
 {
@@ -116,8 +127,10 @@ int Game::OnLoad()
 
 	mesh[Poly::Types::Circle] = Mesh::CreateCircle(16, 1.f);
 	mesh[Poly::Types::Rectangle] = Mesh::CreateQuad();
+	mesh[Poly::Types::ORectangle] = Mesh::CreateQuad();
 	mesh[Poly::Types::Point] = Mesh::CreatePoint();
 	mesh[Poly::Types::RBRect] = Mesh::CreateQuadLines();
+	mesh[Poly::Types::Capsule2D] = Mesh::Create2DCapsule();
 
 	return 1;
 }
@@ -168,6 +181,10 @@ void Game::OnRender()
 		}
 	}
 
+	model = glm::mat4(1.f);
+	primitiveMaterialShader->BindMat4("MVP", projectView * model);
+	capsTestMesh->Draw(GL_TRIANGLES);
+	
 	Application::SwapBuffer(win->GetRenderWindow());
 }
 

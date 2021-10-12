@@ -46,6 +46,9 @@ public:
 
 	static void					AddToDrawList(RBRect* rBRect);
 	static void					RemoveFromDrawList(RBRect* rBRect);
+
+	static void					AddToDrawList(RORect* roRect);
+	static void					RemoveFromDrawList(RORect* roRect);
 	
 	static std::array<std::vector<Poly*>, Poly::Types::Size>	DrawList;
 		
@@ -60,7 +63,7 @@ protected:
 	std::shared_ptr<Shader>		skyboxShader;
 
 	std::unique_ptr<Skybox>		skybox;
+	
 	Camera						camera;
-
 };
 

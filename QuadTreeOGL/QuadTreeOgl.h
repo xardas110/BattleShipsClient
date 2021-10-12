@@ -37,5 +37,7 @@ private:
 	
 	float mX, mY;
 
+
+	std::shared_ptr<RORect> testRect;
 };
 
