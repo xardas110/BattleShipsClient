@@ -164,8 +164,6 @@ void Game::OnRender()
 
 	glm::mat4 model(1.f);
 
-	//std::cout << "Drawlist size: " << DrawList->size() << std::endl;
-	
 	for (size_t i = 0; i < DrawList.size(); i++)
 	{
 		for (Poly *poly : DrawList[i])
@@ -181,10 +179,6 @@ void Game::OnRender()
 		}
 	}
 
-	model = glm::mat4(1.f);
-	primitiveMaterialShader->BindMat4("MVP", projectView * model);
-	capsTestMesh->Draw(GL_TRIANGLES);
-	
 	Application::SwapBuffer(win->GetRenderWindow());
 }
 

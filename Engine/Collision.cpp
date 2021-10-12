@@ -232,7 +232,6 @@ bool Collision::Intersect(const Segment* segment, const Rect* rect, _Out_ float&
 			
 	}
 	q = p + d * tMin;
-	DirectX::BoundingBox
 	return true;
 }
 
