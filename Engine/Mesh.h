@@ -16,6 +16,7 @@ public:
 	static std::unique_ptr<Mesh>	CreateQuadLines(const unsigned int s = 1);
 	static std::unique_ptr<Mesh>	CreatePoint();
 	static std::unique_ptr<Mesh>	CreateQuad();
+	static std::unique_ptr<Mesh>	CreateSegment();
 	static std::unique_ptr<Mesh>	Create2DCapsule();
 	//*First argument specifies how many vertex edges the circle has, for ultra low poly I just choose to default this at 6 vertex edges*//
 	static std::unique_ptr<Mesh>	CreateCircle(const unsigned int vertCount = 6U, const float radius = 0.5f);

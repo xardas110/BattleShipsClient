@@ -89,6 +89,17 @@ void Game::RemoveFromDrawList(RORect* roRect)
 		.erase(std::remove(DrawList[Poly::Types::ORectangle].begin(), DrawList[Poly::Types::ORectangle].end(), roRect), DrawList[Poly::Types::ORectangle].end());
 }
 
+void Game::AddToDrawList(RSegment* rSegment)
+{
+	DrawList[Poly::Types::Segment].push_back(rSegment);
+}
+
+void Game::RemoveFromDrawList(RSegment* rSegment)
+{
+	DrawList[Poly::Types::Segment]
+		.erase(std::remove(DrawList[Poly::Types::Segment].begin(), DrawList[Poly::Types::Segment].end(), rSegment), DrawList[Poly::Types::Segment].end());
+}
+
 
 int Game::Init()
 {
@@ -131,7 +142,8 @@ int Game::OnLoad()
 	mesh[Poly::Types::Point] = Mesh::CreatePoint();
 	mesh[Poly::Types::RBRect] = Mesh::CreateQuadLines();
 	mesh[Poly::Types::Capsule2D] = Mesh::Create2DCapsule();
-
+	mesh[Poly::Types::Segment] = Mesh::CreateSegment();
+	
 	return 1;
 }
 
@@ -179,6 +191,7 @@ void Game::OnRender()
 		}
 	}
 
+	
 	Application::SwapBuffer(win->GetRenderWindow());
 }
 

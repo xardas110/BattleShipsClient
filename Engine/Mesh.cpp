@@ -163,6 +163,44 @@ std::unique_ptr<Mesh> Mesh::CreateQuad()
     return mesh;
 }
 
+std::unique_ptr<Mesh> Mesh::CreateSegment()
+{
+    unsigned int VAO, VBO, EBO;
+    std::vector<Vertex> vertices;
+
+    const auto s = 1.f;
+
+    vertices.push_back(Vertex({ 0.f, -s, 0.f }, { 0.f, 0.f, 1.f }));
+    vertices.push_back(Vertex({ 0.f, s, 0.f }, { 0.f, 0.f, 1.f }));
+
+
+    unsigned int indices[] =
+    {
+        0U, 1U
+    };
+
+    glGenVertexArrays(1, &VAO);
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &EBO);
+
+    glBindVertexArray(VAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_READ);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)NULL);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, n));
+    glEnableVertexAttribArray(2);
+
+    std::unique_ptr<Mesh> mesh(new Mesh(VAO, _countof(indices)));
+    return mesh;
+}
+
 std::unique_ptr<Mesh> Mesh::Create2DCapsule()
 {
     unsigned int VAO, VBO, EBO;

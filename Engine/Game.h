@@ -49,6 +49,9 @@ public:
 
 	static void					AddToDrawList(RORect* roRect);
 	static void					RemoveFromDrawList(RORect* roRect);
+
+	static void					AddToDrawList(RSegment* rSegment);
+	static void					RemoveFromDrawList(RSegment* rSegment);
 	
 	static std::array<std::vector<Poly*>, Poly::Types::Size>	DrawList;
 		

@@ -26,7 +26,6 @@ void QuadTreeOGL::OnRender()
 	
 }
 
-
 glm::vec3 QuadTreeOGL::Get3DMouseDirection(const float mX, const float mY)
 {
 	auto const xHN = ((mX * 2.f) / (float)(win->GetWidth())) - 1.f;
@@ -108,6 +107,13 @@ void QuadTreeOGL::OnMouseClick(MouseClickEvent& e)
 						quadTree->InsertIfSpace(rect);
 					}
 					break;
+					case Poly::Types::Segment:
+					{
+						const auto rect = RSegment::Create(intersectPoint, (intersectPoint + glm::vec3{0.f, 2.f, 0.f}));
+						rect->GetRenderSettings()->SetDiffuse({ 0.5f, 0.5f, 0.7f });
+						quadTree->InsertIfSpace(rect);
+					}
+					break;
 					default:
 					break;
 			}
@@ -153,6 +159,9 @@ void QuadTreeOGL::OnKeyPressed(KeyEvent& e)
 		break;
 	case GLFW_KEY_4:
 		currentSelected = Poly::Types::ORectangle;
+		break;
+	case GLFW_KEY_5:
+		currentSelected = Poly::Types::Segment;
 		break;
 	case GLFW_KEY_R:
 		quadTree->AddRandomizedPoints(2000);

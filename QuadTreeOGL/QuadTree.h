@@ -21,6 +21,7 @@ public:
 
 	bool Insert(std::shared_ptr<Poly> poly);
 	bool InsertIfSpace(std::shared_ptr<Poly> poly);
+	
 	void GetAllIntersectingPolygons(std::shared_ptr<Poly> poly, std::vector<std::shared_ptr<Poly>> &container);
 
 	void GetAllQuads(std::vector<std::shared_ptr<RBRect>> &container) const;

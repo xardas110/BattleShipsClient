@@ -605,3 +605,49 @@ Segment::Segment(const glm::vec3& A, const glm::vec3& B)
 	: Poly(Poly::Types::Segment), A(A), B(B)
 {	
 }
+
+const glm::mat4 Segment::GetTranslation() const
+{
+	glm::mat4 model(1.f);
+	const glm::vec3 lineMiddle = (A + B) * 0.5f;
+	const float lineLength = glm::length(B - A) * 0.5f;
+	
+	model = glm::translate(model, lineMiddle);
+	model = glm::scale(model, glm::vec3(0.f, lineLength, 0.f));
+	
+	return model;
+}
+
+RSegment::RSegment()
+	:Segment()
+{
+	renderMode = 0x0001;
+	Game::AddToDrawList(this);
+}
+
+RSegment::RSegment(const glm::vec3& A, const glm::vec3& B)
+	:Segment(A, B)
+{
+	renderMode = 0x0001;
+	Game::AddToDrawList(this);
+}
+
+RSegment::~RSegment()
+{
+	Game::RemoveFromDrawList(this);
+}
+
+PolyRender* RSegment::GetRenderSettings()
+{
+	return this;
+}
+
+std::shared_ptr<RSegment> RSegment::Create()
+{
+	return std::shared_ptr<RSegment>(new RSegment);
+}
+
+std::shared_ptr<RSegment> RSegment::Create(const glm::vec3& A, const glm::vec3& B)
+{
+	return std::shared_ptr<RSegment>(new RSegment(A, B));
+}

@@ -21,6 +21,7 @@ bool Collision::Intersect(Poly* a, Poly* b)
 	CaseABIntersect(Circle, Circle);
 	CaseABIntersect(Point, Point);
 	CaseABIntersect(ORectangle, ORect);
+	CaseABIntersect(Segment, Segment);
 	default: return false;
 	}
 }
@@ -45,6 +46,7 @@ bool Collision::Intersect(const Rect* a, Poly* poly)
 	CaseBAIntersect(Circle, Circle);
 	CaseBAIntersect(Point, Point);
 	CaseBAIntersect(ORectangle, ORect);
+	CaseBAIntersect(Segment, Segment);
 	default: return false;
 	}
 }
@@ -73,6 +75,14 @@ bool Collision::Intersect(const ORect* a, Poly* poly)
 		CaseBAIntersect(Point, Point);
 	default: return false;
 	}
+}
+
+void Collision::ClosestPoint(const Point* point, const Segment* segment, _Out_ float& t, _Out_ glm::vec3& d)
+{
+	const glm::vec3 ab = segment->B - segment->A;
+	t = glm::dot(point->point - segment->A, ab) / glm::dot(ab, ab);
+	glm::clamp(t, 0.f, 1.f);
+	d = segment->A + t * ab;
 }
 
 bool Collision::Intersect(const ORect* oRectA, const ORect* oRectB)
@@ -168,7 +178,7 @@ void Collision::ClosestPoint(const Rect* rect, const glm::vec3& p, glm::vec3& q)
 	for (int i = 0; i < 3; i++)
 		q[i] = glm::clamp(d[i], -e[i], e[i]);
 
-	//Move q back the world space
+	//Move q back to world space
 	q += rect->C;
 }
 
@@ -200,13 +210,13 @@ bool Collision::Intersect(const Point* point, const ORect* oRect)
 bool Collision::Intersect(const Segment* segment, const Rect* rect, _Out_ float& tMin, _Out_ glm::vec3& q)
 {
 	const glm::vec3 p = segment->A;
-	const glm::vec3 segmentDistanceVector = segment->B - p;
+	const glm::vec3 segmentDistanceVector = segment->B - segment->A;
 	const glm::vec3 d = glm::normalize(segmentDistanceVector);
 
 	const glm::vec3 min = rect->GetMinBounds();
 	const glm::vec3 max = rect->GetMaxBounds();
 
-	tMin = -FLT_MAX;
+	tMin = 0.f;
 	float tMax = glm::length(segmentDistanceVector);
 	
 	for (int i = 0; i<3; i++)
@@ -231,8 +241,55 @@ bool Collision::Intersect(const Segment* segment, const Rect* rect, _Out_ float&
 		}
 			
 	}
+	std::cout << "tmax: " << tMax << std::endl;
 	q = p + d * tMin;
 	return true;
+}
+
+bool Collision::Intersect(const Segment* segment, const Rect* rect)
+{
+	auto bMax = rect->GetMaxBounds();
+	
+	const glm::vec3 p0 = segment->A;
+	const glm::vec3 p1 = segment->B;
+
+	const glm::vec3 c = rect->C;
+	const glm::vec3 e = bMax - c;
+
+	glm::vec3 m = (p0 + p1) * 0.5f;
+
+	glm::vec3 d = p1 - m;
+
+	m = m - c;
+
+	float adx = glm::abs(d.x);
+	if (glm::abs(m.x) > e.x + adx) return false;
+	float ady = glm::abs(d.y);
+	if (glm::abs(m.y) > e.y + ady) return false;
+	float adz = glm::abs(d.z);
+	if (glm::abs(m.z) > e.z + adz) return false;
+	
+	adx += FLT_EPSILON;	ady += FLT_EPSILON;	adz += FLT_EPSILON;
+
+	if (glm::abs(m.y * d.z - m.z * d.y) > e.y * adz + e.z * ady) return false;
+	if (glm::abs(m.z * d.x - m.x * d.z) > e.x * adz + e.z * adx) return false;
+	if (glm::abs(m.x * d.y - m.y * d.x) > e.x * ady + e.y * adx) return false;
+	
+	 return true;
+}
+
+bool Collision::Intersect(const Rect* rect, const Segment* segment)
+{
+	return Intersect(segment, rect);
+}
+
+bool Collision::Intersect(const Segment* a, Poly* poly)
+{
+	switch (poly->GetType())
+	{
+		CaseBAIntersect(Rectangle, Rect);
+	default: return false;
+	}
 }
 
 bool Collision::Intersect(const Circle* circle, const Circle* circle1)

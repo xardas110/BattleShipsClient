@@ -113,6 +113,8 @@ struct Segment : Poly
 	Segment(const Segment&) = default;
 	Segment(Segment&&) = default;
 
+	virtual const glm::mat4 GetTranslation() const override;
+	
 	Segment& operator= (const Segment &) = default;
 	Segment& operator= (Segment&&) = default;
 	
@@ -227,6 +229,25 @@ struct PolyRender
 	float shininess;
 };
 
+struct RSegment : Segment, PolyRender
+{
+private:
+	RSegment();
+	RSegment(const glm::vec3& A, const glm::vec3& B);
+public:
+	RSegment(const RSegment&) = delete;
+	RSegment(RSegment&&) = delete;
+
+	RSegment& operator= (const RSegment&) = delete;
+	RSegment& operator= (RSegment&&) = delete;
+
+	~RSegment() override;
+
+	PolyRender* GetRenderSettings() final override;
+
+	static  std::shared_ptr<RSegment> Create();
+	static std::shared_ptr<RSegment> Create(const glm::vec3& A, const glm::vec3& B);
+};
 
 struct RCircle : Circle, PolyRender
 {
