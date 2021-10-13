@@ -609,12 +609,18 @@ Segment::Segment(const glm::vec3& A, const glm::vec3& B)
 const glm::mat4 Segment::GetTranslation() const
 {
 	glm::mat4 model(1.f);
+	
 	const glm::vec3 lineMiddle = (A + B) * 0.5f;
-	const float lineLength = glm::length(B - A) * 0.5f;
+	const glm::vec3 lineVector = B - A;
+	const float lineLength = glm::length(lineVector);
+	const glm::vec3 lineDirection = lineVector / lineLength;
+	const float lineHalfLength = lineLength * 0.5f;
+
 	
 	model = glm::translate(model, lineMiddle);
-	model = glm::scale(model, glm::vec3(0.f, lineLength, 0.f));
-	
+	model = glm::scale(model, glm::vec3(lineHalfLength, lineHalfLength, lineHalfLength));
+	//model = model * glm::lookAt(A, B, { 0.f, 0.f, 1.f });
+		
 	return model;
 }
 
